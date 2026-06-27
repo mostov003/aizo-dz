@@ -1,0 +1,770 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AIZO.DZ — Curated Essentials</title>
+  <meta name="description" content="aizo.dz — A curated selection of premium, minimalist products crafted for modern living. Proudly Algerian." />
+  <meta name="keywords"    content="aizo, Algeria, premium, minimalist, lifestyle, shop, curated" />
+  <meta name="author"      content="aizo.dz" />
+
+  <!-- Open Graph -->
+  <meta property="og:title"       content="aizo.dz — Curated Essentials" />
+  <meta property="og:description" content="Premium minimalist products curated for intentional living." />
+  <meta property="og:type"        content="website" />
+  <meta property="og:url"         content="https://aizo.dz" />
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=Inter:wght@300;400;500&display=swap" rel="stylesheet" />
+
+  <!-- Stylesheet -->
+  <link rel="stylesheet" href="css/style.css" />
+
+  <!-- Preload new hero image -->
+  <link rel="preload" as="image" href="https://i.pinimg.com/736x/d5/7e/e7/d57ee7227e07e1a03de00c6188c9c462.jpg" fetchpriority="high" />
+</head>
+<body>
+
+<!-- ════════════════════════════════════════════
+     NAVBAR
+════════════════════════════════════════════ -->
+<header class="navbar" id="navbar" role="banner">
+  <div class="navbar__inner">
+
+    <!-- Desktop navigation -->
+    <nav aria-label="Main navigation">
+      <ul class="nav-links">
+        <li><a href="#collection" class="nav-link" data-i18n="nav_new_arrivals">New Arrivals</a></li>
+        <li><a href="/collections" class="nav-link" data-i18n="nav_collection">The Collection</a></li>
+        <li><a href="/customize" class="nav-link" data-i18n="pd_custom_order">Custom Order</a></li>
+        <li><a href="#about"      class="nav-link" data-i18n="nav_about">About Us</a></li>
+        <li><a href="/collections" class="btn-nav" id="shop-now-btn" data-i18n="nav_shop_now">Shop Now</a></li>
+      </ul>
+    </nav>
+
+    <!-- Actions (Cart & Hamburger) -->
+    <div class="navbar__actions">
+      <!-- Floating language button (moved beside cart) -->
+      <button class="lang-btn lang-btn-floating" aria-label="Change Language">
+        <span id="nav-current-lang-label">🇫🇷</span>
+      </button>
+      <!-- Cart -->
+      <button class="cart-trigger" id="cart-trigger" aria-label="Open Cart">
+        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" width="20" height="20">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 10.5V6a3.75 3.75 0 1,0-7.5 0v4.5m11.356-1.993 1.263 12c.07.665-.45 1.243-1.119 1.243H4.25a1.125 1.125 0 0,1-1.12-1.243l1.264-12A1.125 1.125 0 0,1 5.513 7.5h12.974c.576 0 1.059.435 1.119 1.007ZM8.625 10.5a.375.375 0 1,1-.75 0 .375.375 0 0,1 .75 0Zm7.5 0a.375.375 0 1,1-.75 0 .375.375 0 0,1 .75 0Z" />
+        </svg>
+        <span class="cart-count" id="cart-count">0</span>
+      </button>
+
+      <!-- Hamburger (opens mobile menu) -->
+      <button
+        class="hamburger"
+        id="hamburger"
+        aria-label="Toggle navigation menu"
+        aria-expanded="false"
+        aria-controls="mobile-menu"
+      >
+        <span class="hamburger__bar"></span>
+        <span class="hamburger__bar"></span>
+        <span class="hamburger__bar"></span>
+      </button>
+    </div>
+  </div>
+</header>
+
+<!-- SIDE DRAWER BACKDROP -->
+<div class="side-drawer-backdrop" id="side-drawer-backdrop" aria-hidden="true"></div>
+
+<!-- SIDE DRAWER -->
+<aside class="side-drawer" id="side-drawer" role="dialog" aria-modal="true" aria-label="Navigation menu">
+  <div class="side-drawer__header">
+    <button class="side-drawer__close" id="side-drawer-close" aria-label="Close navigation menu">&times;</button>
+  </div>
+  <div class="side-drawer__body">
+    <ul>
+      <li><a href="#collection" class="nav-link" data-i18n="nav_new_arrivals">New Arrivals</a></li>
+      <li><a href="/collections" class="nav-link" data-i18n="nav_collection">The Collection</a></li>
+      <li><a href="/customize" class="nav-link" data-i18n="pd_custom_order">Custom Order</a></li>
+      <li><a href="#about" class="nav-link" data-i18n="nav_about">About Us</a></li>
+    </ul>
+    <a href="/collections" class="btn-nav" data-i18n="nav_shop_now">Shop Now</a>
+  </div>
+  <div class="side-drawer__footer">
+    <button class="side-drawer__lang-btn" id="side-drawer-lang-btn" aria-label="Choose language">
+      <span class="side-drawer__lang-current" id="side-drawer-lang-current">🇫🇷</span>
+      <span class="side-drawer__lang-arrow">▼</span>
+    </button>
+  </div>
+</aside>
+
+<!-- LANGUAGE SELECTION MODAL -->
+<div class="lang-modal-backdrop" id="lang-modal-backdrop" aria-hidden="true"></div>
+<div class="lang-modal" id="lang-modal" role="dialog" aria-modal="true" aria-labelledby="lang-modal-title" aria-hidden="true">
+  <div class="lang-modal__handle"></div>
+  <div class="lang-modal__header">
+    <span class="lang-modal__title" id="lang-modal-title" data-i18n="lang_modal_title">Choose Language</span>
+    <button class="lang-modal__close" id="lang-modal-close" aria-label="Close language selector">&times;</button>
+  </div>
+  <div class="lang-modal__list">
+    <button class="lang-modal__option" data-lang="ar">
+      <span class="lang-modal__flag">🇩🇿</span>
+      <div class="lang-modal__info">
+        <span class="lang-modal__name">Arabic</span>
+        <span class="lang-modal__native">عربي - العربية</span>
+      </div>
+      <span class="lang-modal__check">✓</span>
+    </button>
+    <button class="lang-modal__option" data-lang="fr">
+      <span class="lang-modal__flag">🇫🇷</span>
+      <div class="lang-modal__info">
+        <span class="lang-modal__name">Français</span>
+        <span class="lang-modal__native">Langue française</span>
+      </div>
+      <span class="lang-modal__check">✓</span>
+    </button>
+    <button class="lang-modal__option" data-lang="en">
+      <span class="lang-modal__flag">🇺🇸</span>
+      <div class="lang-modal__info">
+        <span class="lang-modal__name">English</span>
+        <span class="lang-modal__native">English language</span>
+      </div>
+      <span class="lang-modal__check">✓</span>
+    </button>
+  </div>
+</div>
+
+
+
+<!-- ════════════════════════════════════════════
+     HERO
+════════════════════════════════════════════ -->
+<main>
+<section class="hero" aria-labelledby="hero-title">
+  <!-- SEO Heading -->
+  <h1 class="sr-only" id="hero-title">AIZO.DZ — Curated Essentials</h1>
+
+  <!-- Single Background Image -->
+  <div class="hero__bg-image" aria-hidden="true"></div>
+  
+  <!-- Dark overlay for contrast -->
+  <div class="hero__overlay" aria-hidden="true"></div>
+
+  <div class="hero__content">
+    <div class="hero__actions">
+      <a href="/collections" class="btn-shop-hero" id="hero-shop-btn">
+        <span>SHOP NOW</span>
+      </a>
+    </div>
+  </div>
+</section>
+
+
+<!-- ════════════════════════════════════════════
+     MARQUEE
+════════════════════════════════════════════ -->
+<div class="marquee" aria-hidden="true">
+  <div class="marquee__track">
+    <span class="marquee__item">Premium Quality</span>
+    <span class="marquee__dot">·</span>
+    <span class="marquee__item">Fast Delivery 58 Wilayas</span>
+    <span class="marquee__dot">·</span>
+    <span class="marquee__item">Curated in Algeria</span>
+    <span class="marquee__dot">·</span>
+    <span class="marquee__item">Mindful Living</span>
+    <span class="marquee__dot">·</span>
+    <span class="marquee__item">14-Day Returns</span>
+    <span class="marquee__dot">·</span>
+    <span class="marquee__item">Authenticity Guaranteed</span>
+    <span class="marquee__dot">·</span>
+    <!-- duplicate for seamless loop -->
+    <span class="marquee__item">Premium Quality</span>
+    <span class="marquee__dot">·</span>
+    <span class="marquee__item">Fast Delivery 58 Wilayas</span>
+    <span class="marquee__dot">·</span>
+    <span class="marquee__item">Curated in Algeria</span>
+    <span class="marquee__dot">·</span>
+    <span class="marquee__item">Mindful Living</span>
+    <span class="marquee__dot">·</span>
+    <span class="marquee__item">14-Day Returns</span>
+    <span class="marquee__dot">·</span>
+    <span class="marquee__item">Authenticity Guaranteed</span>
+    <span class="marquee__dot">·</span>
+  </div>
+</div>
+
+
+<!-- ════════════════════════════════════════════
+     SHOP BY CATEGORY / BANNERS GRID
+     ════════════════════════════════════════════ -->
+<section class="category-banners" aria-labelledby="cat-banners-title">
+  <div class="category-banners__inner">
+    <h2 class="category-banners__title" id="cat-banners-title">Shop by Category</h2>
+    <div class="category-banners__grid">
+      
+      <!-- Denim -->
+      <a href="/collections?category=jeans" class="category-banner-card">
+        <img class="category-banner-card__img" src="https://i.pinimg.com/736x/5b/0e/55/5b0e55765d14b77877e75fca2315ae6f.jpg" alt="Shop Jeans" loading="lazy" />
+        <div class="category-banner-card__overlay">
+          <span class="category-banner-card__btn">Shop Denim</span>
+        </div>
+      </a>
+
+      <!-- Jackets -->
+      <a href="/collections?category=jackets" class="category-banner-card">
+        <img class="category-banner-card__img" src="https://i.pinimg.com/736x/fa/14/b3/fa14b392e687ec62d0bbe320e81ca10d.jpg" alt="Shop Jackets" loading="lazy" />
+        <div class="category-banner-card__overlay">
+          <span class="category-banner-card__btn">Shop Jackets</span>
+        </div>
+      </a>
+
+      <!-- Hoodies -->
+      <a href="/collections?category=hoodies" class="category-banner-card">
+        <img class="category-banner-card__img" src="https://i.pinimg.com/736x/2b/5d/60/2b5d60ac344515aada335e3ce17938aa.jpg" alt="Shop Hoodies" loading="lazy" />
+        <div class="category-banner-card__overlay">
+          <span class="category-banner-card__btn">Shop Hoodies</span>
+        </div>
+      </a>
+
+    </div>
+  </div>
+</section>
+
+
+<!-- ════════════════════════════════════════════
+     COLLECTION / PRODUCT GRID
+════════════════════════════════════════════ -->
+<section class="section-collection" id="collection" aria-labelledby="collection-title">
+  <div class="section-collection__inner">
+
+    <!-- Header -->
+    <div class="collection-header reveal">
+      <div>
+        <p class="section-eyebrow">New Arrivals</p>
+        <h2 id="collection-title">The Collection</h2>
+      </div>
+      <a href="/collections" class="view-all" id="view-all-btn">View All →</a>
+    </div>
+
+    <!-- Category Filter -->
+    <div class="category-filter reveal">
+      <button class="category-btn category-btn--active" data-category="all">All</button>
+      <button class="category-btn" data-category="jeans">Jeans</button>
+      <button class="category-btn" data-category="jackets">Jackets</button>
+      <button class="category-btn" data-category="hoodies">Hoodies</button>
+    </div>
+
+    <!-- Grid (rendered by products.js) -->
+    <div class="product-grid" id="product-grid" role="list" aria-label="Products">
+      <!-- Cards injected by JS -->
+    </div>
+
+    <!-- Load More -->
+    <div class="load-more-wrap reveal">
+      <button class="btn-outline" id="load-more-btn">Load More</button>
+    </div>
+
+  </div>
+</section>
+
+
+<!-- ════════════════════════════════════════════
+     ABOUT
+════════════════════════════════════════════ -->
+<section class="section-about" id="about" aria-labelledby="about-title">
+  <div class="section-about__inner reveal">
+    <p class="section-eyebrow">Who we are</p>
+    <h2 class="section-title" id="about-title">
+      Objects that matter.<br/>
+      <em>Moments that last.</em>
+    </h2>
+    <p class="section-body">
+      aizo.dz was born from a belief that everyday objects should be beautiful,
+      functional, and intentional. We source and curate the finest pieces —
+      each one chosen to elevate the ordinary into the extraordinary.
+    </p>
+    <div class="divider" aria-hidden="true">
+      <div class="divider__line"></div>
+      <span class="divider__star">✦</span>
+      <div class="divider__line"></div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ════════════════════════════════════════════
+     NEWSLETTER
+════════════════════════════════════════════ -->
+<section class="section-newsletter" aria-labelledby="nl-title">
+  <div class="section-newsletter__inner reveal">
+    <p class="section-eyebrow">Stay in the know</p>
+    <h2 class="section-title" id="nl-title">
+      Join the<br/><em>inner circle.</em>
+    </h2>
+    <p class="section-body">
+      Be the first to hear about new arrivals, exclusive offers,
+      and the stories behind each piece.
+    </p>
+    <form class="nl-form" id="nl-form" novalidate>
+      <input
+        class="nl-input"
+        id="nl-email"
+        type="email"
+        placeholder="Your email address"
+        required
+        aria-label="Email address"
+      />
+      <div class="captcha-container" id="nl-captcha-container" style="display: flex; align-items: center; gap: 8px; margin: 10px 0;">
+        <span class="captcha-question" id="nl-captcha-question" style="color: var(--color-stone-500); font-size: 0.9rem;"></span>
+        <input class="captcha-input" id="nl-captcha-answer" type="number" placeholder="?" required style="width: 60px; padding: 6px; border: 1px solid var(--color-border); text-align: center;" />
+      </div>
+      <button type="submit" class="btn-subscribe" id="nl-submit">Subscribe</button>
+    </form>
+    <p class="nl-success" id="nl-success" role="status">
+      ✓ Thank you — you're on the list.
+    </p>
+  </div>
+</section>
+
+
+<!-- ════════════════════════════════════════════
+     FEATURES / TRUST BAR
+════════════════════════════════════════════ -->
+<section class="section-features" aria-label="Our promises">
+  <div class="section-features__grid">
+
+    <div class="feature reveal">
+      <div class="feature__icon" aria-hidden="true">
+        <svg fill="none" viewBox="0 0 24 24" stroke-width="1.5">
+          <path stroke-linecap="round" stroke-linejoin="round"
+                d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8l1 13h12l1-13"/>
+        </svg>
+      </div>
+      <p class="feature__title">Fast Delivery</p>
+      <p class="feature__body">Fast and secure shipping across all 58 wilayas in Algeria.</p>
+    </div>
+
+    <div class="feature reveal delay-1">
+      <div class="feature__icon" aria-hidden="true">
+        <svg fill="none" viewBox="0 0 24 24" stroke-width="1.5">
+          <path stroke-linecap="round" stroke-linejoin="round"
+                d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+        </svg>
+      </div>
+      <p class="feature__title">Authenticity Guarantee</p>
+      <p class="feature__body">Every product is hand-verified for quality before it reaches you.</p>
+    </div>
+
+    <div class="feature reveal delay-2">
+      <div class="feature__icon" aria-hidden="true">
+        <svg fill="none" viewBox="0 0 24 24" stroke-width="1.5">
+          <path stroke-linecap="round" stroke-linejoin="round"
+                d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9
+                   m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+        </svg>
+      </div>
+      <p class="feature__title">Easy Returns</p>
+      <p class="feature__body">14-day hassle-free returns. No questions asked.</p>
+    </div>
+
+  </div>
+</section>
+</main>
+
+
+<!-- ════════════════════════════════════════════
+     FOOTER
+════════════════════════════════════════════ -->
+<footer class="footer" id="contact" role="contentinfo">
+  <div class="footer__inner">
+    <div class="footer__grid">
+
+      <!-- Brand column -->
+      <div class="footer-col">
+        <p class="footer-tagline">
+          Curated essentials for a more intentional life.<br/>Proudly Algerian.
+        </p>
+        <div class="footer-socials">
+          <a href="#" class="social-link" id="ig-link" aria-label="Instagram">
+            <svg fill="currentColor" viewBox="0 0 24 24">
+              <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058
+                       1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664
+                       4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07
+                       -3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013
+                       -3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069
+                       4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014
+                       8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98
+                       6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2
+                       6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667
+                       -.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0
+                       5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8
+                       4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z"/>
+            </svg>
+          </a>
+          <a href="#" class="social-link" id="fb-link" aria-label="Facebook">
+            <svg fill="currentColor" viewBox="0 0 24 24">
+              <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954
+                       10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669
+                       1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25
+                       h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+            </svg>
+          </a>
+          <a href="#" class="social-link" id="tt-link" aria-label="TikTok">
+            <svg fill="currentColor" viewBox="0 0 24 24">
+              <path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-2.88
+                       2.5 2.89 2.89 0 01-2.89-2.89 2.89 2.89 0 012.89-2.89c.28 0 .54.04.79.1V9.01
+                       a6.33 6.33 0 00-.79-.05 6.34 6.34 0 00-6.34 6.34 6.34 6.34 0 006.34 6.34
+                       6.34 6.34 0 006.33-6.34V8.69a8.18 8.18 0 004.79 1.52V6.76a4.85 4.85 0
+                       01-1.02-.07z"/>
+            </svg>
+          </a>
+        </div>
+      </div>
+
+      <!-- Shop links -->
+      <div class="footer-col">
+        <h4 data-i18n="foot_shop">Shop</h4>
+        <ul>
+          <li><a href="#collection" data-i18n="foot_new_arrivals">New Arrivals</a></li>
+          <li><a href="#" data-i18n="foot_best_sellers">Best Sellers</a></li>
+          <li><a href="#" data-i18n="foot_home_living">Home & Living</a></li>
+          <li><a href="#" data-i18n="foot_accessories">Accessories</a></li>
+          <li><a href="#" data-i18n="foot_gift_sets">Gift Sets</a></li>
+        </ul>
+      </div>
+
+      <!-- Info links -->
+      <div class="footer-col">
+        <h4 data-i18n="foot_info">Info</h4>
+        <ul>
+          <li><a href="#about" data-i18n="foot_our_story">Our Story</a></li>
+          <li><a href="#" data-i18n="foot_shipping">Shipping & Returns</a></li>
+          <li><a href="#" data-i18n="foot_privacy">Privacy Policy</a></li>
+          <li><a href="#" data-i18n="foot_terms">Terms of Use</a></li>
+          <li><a href="#" data-i18n="foot_faq">FAQ</a></li>
+        </ul>
+      </div>
+
+      <!-- Contact -->
+      <div class="footer-col">
+        <h4 data-i18n="foot_contact">Contact</h4>
+        <ul>
+          <li class="contact-item">
+            <svg fill="none" viewBox="0 0 24 24" stroke-width="1.5">
+              <path stroke-linecap="round" stroke-linejoin="round"
+                    d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0
+                       002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+            </svg>
+            <a href="mailto:contact@aizo.dz">contact@aizo.dz</a>
+          </li>
+          <li class="contact-item">
+            <svg fill="currentColor" viewBox="0 0 24 24" width="16" height="16">
+              <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+            </svg>
+            <a href="https://wa.me/213655349311" target="_blank" rel="noopener">0655 34 93 11 (WhatsApp)</a>
+          </li>
+          <li class="contact-item">
+            <svg fill="none" viewBox="0 0 24 24" stroke-width="1.5">
+              <path stroke-linecap="round" stroke-linejoin="round"
+                    d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8
+                       8 0 1111.314 0z"/>
+              <path stroke-linecap="round" stroke-linejoin="round"
+                    d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
+            </svg>
+            <span>Algiers, Algeria</span>
+          </li>
+        </ul>
+      </div>
+
+    </div><!-- /footer__grid -->
+
+    <!-- Bottom bar -->
+    <div class="footer__bottom">
+      <p class="footer__copy">© 2026 AIZO.DZ — All rights reserved.</p>
+      <p class="footer__made">Made with intention · Algeria</p>
+    </div>
+  </div>
+</footer>
+
+
+<!-- ════════════════════════════════════════════
+     CART DRAWER
+════════════════════════════════════════════ -->
+<div class="cart-drawer-backdrop" id="cart-drawer-backdrop" aria-hidden="true"></div>
+<aside class="cart-drawer" id="cart-drawer" role="dialog" aria-modal="true" aria-labelledby="cart-drawer-title">
+  <div class="cart-drawer__header">
+    <h2 id="cart-drawer-title">سلة المشتريات <span>/ Cart</span></h2>
+    <button class="btn-close-cart" id="btn-close-cart" aria-label="Close cart">×</button>
+  </div>
+
+  <div class="cart-drawer__body">
+    <!-- Empty State -->
+    <div class="cart-empty" id="cart-empty">
+      <div class="cart-empty__icon">✦</div>
+      <p class="cart-empty__text-ar">السلة فارغة حالياً</p>
+      <p class="cart-empty__text-en">Your cart is empty</p>
+      <a href="#collection" class="btn-primary" id="btn-empty-shop">تسوق الآن / Shop Now</a>
+    </div>
+
+    <!-- Cart Items list -->
+    <div class="cart-items" id="cart-items-list">
+      <!-- Injected by JS -->
+    </div>
+
+    <!-- Summary & Checkout Form -->
+    <div class="cart-checkout-section" id="cart-checkout-section" style="display: none;">
+      <div class="cart-summary">
+        <div class="summary-row">
+          <span>المجموع الفرعي / Subtotal</span>
+          <span id="cart-subtotal">0 DZD</span>
+        </div>
+        <div class="summary-row">
+          <span>شحن التوصيل / Shipping</span>
+          <span id="cart-shipping">-- DZD</span>
+        </div>
+        <div class="summary-row summary-total">
+          <span>الإجمالي / Total</span>
+          <span id="cart-total">0 DZD</span>
+        </div>
+      </div>
+
+      <form class="checkout-form" id="checkout-form" autocomplete="on">
+        <h3>معلومات التوصيل <span>/ Delivery Info</span></h3>
+
+        <div class="form-group-row" style="display: flex; gap: 0.75rem;">
+          <div class="form-group" style="flex: 1;">
+            <label for="checkout-name">الاسم / First Name *</label>
+            <input type="text" id="checkout-name" placeholder="الاسم الشخصي" required />
+            <span class="error-msg" id="err-name">يرجى إدخال الاسم</span>
+          </div>
+          <div class="form-group" style="flex: 1;">
+            <label for="checkout-surname">اللقب / Last Name *</label>
+            <input type="text" id="checkout-surname" placeholder="اللقب العائلي" required />
+            <span class="error-msg" id="err-surname">يرجى إدخال اللقب</span>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="checkout-phone">رقم الهاتف / Phone Number *</label>
+          <input type="tel" id="checkout-phone" placeholder="05 / 06 / 07 XX XX XX XX" required />
+          <span class="error-msg" id="err-phone">يرجى إدخال رقم هاتف صحيح (10 أرقام)</span>
+        </div>
+
+        <div class="form-group">
+          <label for="checkout-wilaya">الولاية / State *</label>
+          <select id="checkout-wilaya" required>
+            <option value="" disabled selected>اختر الولاية...</option>
+            <option value="1 - أدرار (Adrar)">1 - أدرار (Adrar)</option>
+            <option value="2 - الشلف (Chlef)">2 - الشلف (Chlef)</option>
+            <option value="3 - الأغواط (Laghouat)">3 - الأغواط (Laghouat)</option>
+            <option value="4 - أم البواقي (Oum El Bouaghi)">4 - أم البواقي (Oum El Bouaghi)</option>
+            <option value="5 - باتنة (Batna)">5 - باتنة (Batna)</option>
+            <option value="6 - بجاية (Béjaïa)">6 - بجاية (Béjaïa)</option>
+            <option value="7 - بسكرة (Biskra)">7 - بسكرة (Biskra)</option>
+            <option value="8 - بشار (Béchar)">8 - بشار (Béchar)</option>
+            <option value="9 - البليدة (Blida)">9 - البليدة (Blida)</option>
+            <option value="10 - البويرة (Bouira)">10 - البويرة (Bouira)</option>
+            <option value="11 - تمنراست (Tamanrasset)">11 - تمنراست (Tamanrasset)</option>
+            <option value="12 - تبسة (Tébessa)">12 - تبسة (Tébessa)</option>
+            <option value="13 - تلمسان (Tlemcen)">13 - تلمسان (Tlemcen)</option>
+            <option value="14 - تيارت (Tiaret)">14 - تيارت (Tiaret)</option>
+            <option value="15 - تيزي وزو (Tizi Ouzou)">15 - تيزي وزو (Tizi Ouzou)</option>
+            <option value="16 - الجزائر (Algiers)">16 - الجزائر (Algiers)</option>
+            <option value="17 - الجلفة (Djelfa)">17 - الجلفة (Djelfa)</option>
+            <option value="18 - جيجل (Jijel)">18 - جيجل (Jijel)</option>
+            <option value="19 - سطيف (Sétif)">19 - سطيف (Sétif)</option>
+            <option value="20 - سعيدة (Saïda)">20 - سعيدة (Saïda)</option>
+            <option value="21 - سكيكدة (Skikda)">21 - سكيكدة (Skikda)</option>
+            <option value="22 - سيدي بلعباس (Sidi Bel Abbès)">22 - سيدي بلعباس (Sidi Bel Abbès)</option>
+            <option value="23 - عنابة (Annaba)">23 - عنابة (Annaba)</option>
+            <option value="24 - قالمة (Guelma)">24 - قالمة (Guelma)</option>
+            <option value="25 - قسنطينة (Constantine)">25 - قسنطينة (Constantine)</option>
+            <option value="26 - المدية (Médéa)">26 - المدية (Médéa)</option>
+            <option value="27 - مستغانم (Mostaganem)">27 - مستغانم (Mostaganem)</option>
+            <option value="28 - المسيلة (M'Sila)">28 - المسيلة (M'Sila)</option>
+            <option value="29 - معسكر (Mascara)">29 - معسكر (Mascara)</option>
+            <option value="30 - ورقلة (Ouargla)">30 - ورقلة (Ouargla)</option>
+            <option value="31 - وهران (Oran)">31 - وهران (Oran)</option>
+            <option value="32 - البيض (El Bayadh)">32 - البيض (El Bayadh)</option>
+            <option value="33 - إليزي (Illizi)">33 - إليزي (Illizi)</option>
+            <option value="34 - برج بوعريريج (Bordj Bou Arréridj)">34 - برج بوعريريج (Bordj Bou Arréridj)</option>
+            <option value="35 - بومرداس (Boumerdès)">35 - بومرداس (Boumerdès)</option>
+            <option value="36 - الطارف (El Tarf)">36 - الطارف (El Tarf)</option>
+            <option value="37 - تندوف (Tindouf)">37 - تندوف (Tindouf)</option>
+            <option value="38 - تسمسيلت (Tissemsilt)">38 - تسمسيلت (Tissemsilt)</option>
+            <option value="39 - الوادي (El Oued)">39 - الوادي (El Oued)</option>
+            <option value="40 - خنشلة (Khenchela)">40 - خنشلة (Khenchela)</option>
+            <option value="41 - سوق أهراس (Souk Ahras)">41 - سوق أهراس (Souk Ahras)</option>
+            <option value="42 - تيبازة (Tipaza)">42 - تيبازة (Tipaza)</option>
+            <option value="43 - ميلة (Mila)">43 - ميلة (Mila)</option>
+            <option value="44 - عين الدفلة (Aïn Defla)">44 - عين الدفلة (Aïn Defla)</option>
+            <option value="45 - النعامة (Naâma)">45 - النعامة (Naâma)</option>
+            <option value="46 - عين تموشنت (Aïn Témouchent)">46 - عين تموشنت (Aïn Témouchent)</option>
+            <option value="47 - غرداية (Ghardaïa)">47 - غرداية (Ghardaïa)</option>
+            <option value="48 - غليزان (Relizane)">48 - غليزان (Relizane)</option>
+            <option value="49 - المغير (El M'Ghair)">49 - المغير (El M'Ghair)</option>
+            <option value="50 - المنيعة (El Meniaa)">50 - المنيعة (El Meniaa)</option>
+            <option value="51 - أولاد جلال (Ouled Djellal)">51 - أولاد جلال (Ouled Djellal)</option>
+            <option value="52 - برج باجي مختار (Bordj Baji Mokhtar)">52 - برج باجي مختار (Bordj Baji Mokhtar)</option>
+            <option value="53 - بني عباس (Béni Abbès)">53 - بني عباس (Béni Abbès)</option>
+            <option value="54 - عين صالح (In Salah)">54 - عين صالح (In Salah)</option>
+            <option value="55 - عين قزام (In Guezzam)">55 - عين قزام (In Guezzam)</option>
+            <option value="56 - تقرت (Touggourt)">56 - تقرت (Touggourt)</option>
+            <option value="57 - جانت (Djanet)">57 - جانت (Djanet)</option>
+            <option value="58 - المغير (El M'Ghair)">58 - المغير (El M'Ghair)</option>
+          </select>
+          <span class="error-msg" id="err-wilaya">يرجى اختيار الولاية</span>
+        </div>
+
+        <div class="form-group">
+          <label>نوع التوصيل / Delivery Type *</label>
+          <div class="delivery-options">
+            <label class="delivery-option-card">
+              <input type="radio" name="delivery-type" value="home" checked />
+              <div class="option-content">
+                <span class="option-title" data-i18n="delivery_home">التوصيل إلى المنزل (A DOMICILE)</span>
+                <span class="option-desc"><span data-i18n="delivery_home_desc">الدفع عند الاستلام بباب المنزل</span> · <strong id="home-delivery-price"></strong></span>
+              </div>
+            </label>
+            <label class="delivery-option-card">
+              <input type="radio" name="delivery-type" value="office" />
+              <div class="option-content">
+                <span class="option-title" data-i18n="delivery_office">التوصيل إلى المكتب (STOP DESK)</span>
+                <span class="option-desc"><span data-i18n="delivery_office_desc">الاستلام من مكتب شركة التوصيل</span> · <strong id="office-delivery-price"></strong></span>
+              </div>
+            </label>
+          </div>
+        </div>
+
+        <div class="form-group" id="home-address-group">
+          <label for="checkout-address">العنوان التفصيلي / Home Address *</label>
+          <div class="input-with-icon" style="position: relative; display: flex; align-items: center;">
+            <span class="input-icon" style="position: absolute; right: 10px; top: 12px; color: var(--color-stone-400); pointer-events: none;">
+              <svg fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" style="width: 18px; height: 18px;">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12l8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25" />
+              </svg>
+            </span>
+            <textarea
+              id="checkout-address"
+              placeholder="مثال: حي السلام، شارع الأمير، رقم 12، الطابق الثاني"
+              rows="3"
+              style="padding-right: 2.25rem;"
+              required
+            ></textarea>
+          </div>
+          <span class="error-msg" id="err-address">يرجى إدخال عنوان المنزل</span>
+        </div>
+
+        <div class="form-group" id="office-select-group" style="display: none;">
+          <label for="checkout-office">مكتب التوصيل / Shipping Office *</label>
+          <div class="input-with-icon" style="position: relative; display: flex; align-items: center;">
+            <span class="input-icon" style="position: absolute; right: 10px; top: 12px; color: var(--color-stone-400); pointer-events: none;">
+              <svg fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" style="width: 18px; height: 18px;">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 21v-8.25M15.75 21v-8.25M8.25 21v-8.25M3 9l9-6 9 6m-1.5 12V10.332A48.36 48.36 0 0012 9.75c-2.551 0-5.053.244-7.5 1.724V21a1.5 1.5 0 001.5 1.5h15a1.5 1.5 0 001.5-1.5z" />
+              </svg>
+            </span>
+            <select id="checkout-office" style="padding-right: 2.25rem;">
+              <option value="" disabled selected>اختر مكتب التوصيل...</option>
+            </select>
+          </div>
+          <span class="error-msg" id="err-office">يرجى اختيار مكتب التوصيل</span>
+        </div>
+
+        <button type="submit" class="btn-primary btn-checkout" id="btn-confirm-order">
+          تأكيد الطلب / Confirm Order
+        </button>
+        <div class="error-alert" id="checkout-error-alert" style="display: none;">
+          <span class="error-icon">⚠️</span>
+          <div class="error-content">
+            <p id="checkout-error-text">حدث خطأ أثناء معالجة الطلب</p>
+          </div>
+          <button type="button" class="error-close" id="checkout-error-close">×</button>
+        </div>
+      </form>
+    </div>
+
+    <!-- Success Screen -->
+    <div class="order-success-screen" id="order-success-screen" style="display: none;">
+      <div class="success-icon">✓</div>
+      <h2>تم تسجيل طلبك بنجاح!</h2>
+      <p class="success-subtitle">شكراً لثقتكم. سنقوم بالاتصال بكم هاتفياً قريباً لتأكيد الطلب وشحنه.</p>
+      
+      <div class="order-details-card">
+        <div class="details-row">
+          <span>رقم الطلب:</span>
+          <strong id="success-order-id">#00000</strong>
+        </div>
+        <div class="details-row">
+          <span>الاسم:</span>
+          <span id="success-order-name">-</span>
+        </div>
+        <div class="details-row">
+          <span>الهاتف:</span>
+          <span id="success-order-phone">-</span>
+        </div>
+        <div class="details-row">
+          <span>الولاية:</span>
+          <span id="success-order-wilaya">-</span>
+        </div>
+        <div class="details-row">
+          <span>التوصيل إلى:</span>
+          <span id="success-order-delivery">-</span>
+        </div>
+        <div class="details-row total-row">
+          <span>المجموع الإجمالي:</span>
+          <strong id="success-order-total">0 DZD</strong>
+        </div>
+      </div>
+
+      <button class="btn-primary" id="btn-success-close">متابعة التسوق / Continue Shopping</button>
+    </div>
+  </div>
+</aside>
+
+<!-- ════════════════════════════════════════════
+     SCRIPTS (products.js first, then main.js)
+════════════════════════════════════════════ -->
+<!-- EmailJS SDK -->
+<script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+<!-- Central API Config (MUST be first) -->
+<script src="js/config.js"></script>
+<script src="js/products.js"></script>
+<script src="js/i18n.js"></script>
+<script src="js/sync.js"></script>
+<script src="js/main.js"></script>
+<!-- ════════════════════════════════════════════
+     EMAIL LEAD COLLECTION POPUP
+     ════════════════════════════════════════════ -->
+<div class="lead-popup-backdrop" id="lead-popup-backdrop" aria-hidden="true"></div>
+<div class="lead-popup" id="lead-popup" role="dialog" aria-modal="true" aria-labelledby="lead-popup-title" style="display: none;">
+  <div class="lead-popup__inner">
+    <button class="btn-close-lead-popup" id="btn-close-lead-popup" aria-label="Close popup">×</button>
+    <h2 id="lead-popup-title">انضم إلينا / Join Us</h2>
+    <p class="lead-popup__desc-ar">اشترك في قائمتنا البريدية للحصول على آخر التحديثات والمجموعات الجديدة الحصرية.</p>
+    <p class="lead-popup__desc-en">Subscribe to our newsletter for updates on new arrivals and exclusive collections.</p>
+    
+    <form class="lead-popup__form" id="lead-popup-form" action="https://formspree.io/f/YOUR_FORMSPREE_ID" method="POST">
+      <div class="form-group">
+        <input type="email" id="lead-email" name="email" placeholder="بريدك الإلكتروني / Email address" required />
+        <span class="error-msg" id="err-lead-email">يرجى إدخال بريد إلكتروني صحيح</span>
+      </div>
+      <div class="captcha-container" id="lead-captcha-container" style="display: flex; align-items: center; gap: 8px; margin: 10px 0; justify-content: center;">
+        <span class="captcha-question" id="lead-captcha-question" style="color: var(--color-stone-600); font-size: 0.85rem;"></span>
+        <input class="captcha-input" id="lead-captcha-answer" type="number" placeholder="?" required style="width: 60px; padding: 8px; border: 1px solid var(--color-border); text-align: center; background: var(--color-bg-main);" />
+      </div>
+      <button type="submit" class="btn-primary btn-lead-submit" id="btn-lead-submit">
+        اشترك الآن / Subscribe
+      </button>
+    </form>
+    
+    <div class="lead-popup__success" id="lead-popup-success" style="display: none;">
+      <div class="success-icon" style="margin: 0 auto 1rem;">✓</div>
+      <h3>شكراً لتسجيلك! / Thank You!</h3>
+      <p>تم تسجيل بريدك بنجاح. سنبقيك على اطلاع.</p>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>فحص عرض الصور في الداشبورد</title>
+  <style>
+    body { font-family: Arial; padding: 20px; }
+    .test-container { margin: 20px 0; padding: 20px; border: 1px solid #ddd; }
+    .viewport-design-img { max-width: 200px; border: 1px solid red; }
+    .viewport-design-overlay { position: relative; display: inline-block; }
+    .debug-info { background: #f0f0f0; padding: 10px; margin: 10px 0; font-family: monospace; }
+  </style>
+</head>
+<body>
+  <h1>فحص عرض الصور</h1>
+  
+  <div class="test-container">
+    <h2>Test 1: Direct Image Load</h2>
+    <img src="http://localhost:3000/uploads/design-AZ-181301-0.png" style="max-width: 200px; border: 2px solid green;" alt="Test Image">
+    <div class="debug-info" id="test1-debug">Loading...</div>
+  </div>
+
+  <div class="test-container">
+    <h2>Test 2: Viewport-like Structure</h2>
+    <div class="viewport-design-overlay" style="visibility: hidden;">
+      <img id="test2-img" class="viewport-design-img" src="http://localhost:3000/uploads/design-AZ-181301-0.png" alt="Design">
+    </div>
+    <div class="debug-info" id="test2-debug">Loading...</div>
+  </div>
+
+  <script>
+    // Test 1
+    const img1 = document.querySelector('.test-container:nth-child(2) img');
+    img1.onload = () => {
+      document.getElementById('test1-debug').textContent = '✅ Image loaded! Dimensions: ' + img1.naturalWidth + 'x' + img1.naturalHeight;
+    };
+    img1.onerror = () => {
+      document.getElementById('test1-debug').textContent = '❌ Image failed to load';
+    };
+
+    // Test 2
+    const img2 = document.getElementById('test2-img');
+    const overlay2 = img2.closest('.viewport-design-overlay');
+    
+    const updateOverlay = function() {
+      document.getElementById('test2-debug').innerHTML = 
+        '✅ Image loaded: ' + img2.naturalWidth + 'x' + img2.naturalHeight + '<br>' +
+        'Complete: ' + img2.complete + '<br>' +
+        'Current src: ' + img2.src;
+      overlay2.style.visibility = 'visible';
+    };
+
+    img2.onload = updateOverlay;
+    
+    // Simulate what admin.html does
+    setTimeout(() => {
+      if (img2.complete) {
+        document.getElementById('test2-debug').innerHTML += '<br>⚠️ img.complete = true, calling updateOverlay();';
+        updateOverlay();
+      }
+    }, 100);
+
+    img2.onerror = () => {
+      document.getElementById('test2-debug').textContent = '❌ Image failed to load';
+    };
+  </script>
+</body>
+</html>

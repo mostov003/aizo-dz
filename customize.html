@@ -1,0 +1,784 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AIZO.DZ — Personnalisation Premium</title>
+  <meta name="description" content="aizo.dz — Personnalisez vos vêtements préférés en temps réel avec notre outil de live preview premium." />
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+
+  <!-- Stylesheet -->
+  <link rel="stylesheet" href="css/style.css" />
+
+  <!-- Fabric.js CDN -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.0/fabric.min.js"></script>
+</head>
+<body class="co-page">
+
+  <!-- Announcement Bar -->
+  <div class="announcement-bar">
+    LIVRAISON RAPIDE & PAIEMENT À LA LIVRAISON | توصيل سريع والدفع عند الاستلام
+  </div>
+
+  <!-- NAVBAR -->
+  <header class="navbar" id="navbar" role="banner">
+    <div class="navbar__inner">
+      <nav aria-label="Main navigation">
+        <ul class="nav-links">
+          <li><a href="/#collection" class="nav-link" data-i18n="nav_new_arrivals">New Arrivals</a></li>
+          <li><a href="/collections" class="nav-link" data-i18n="nav_collection">The Collection</a></li>
+          <li><a href="/#about" class="nav-link" data-i18n="nav_about">About Us</a></li>
+          <li><a href="/collections" class="btn-nav" id="shop-now-btn" data-i18n="nav_shop_now">Shop Now</a></li>
+        </ul>
+      </nav>
+      <div class="navbar__actions">
+        <!-- Floating language button (moved beside cart) -->
+        <button class="lang-btn lang-btn-floating" aria-label="Change Language">
+          <span id="current-lang-label">🇫🇷</span>
+        </button>
+        <button class="cart-trigger" id="cart-trigger" aria-label="Open Cart">
+          <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" width="20" height="20">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 10.5V6a3.75 3.75 0 1,0-7.5 0v4.5m11.356-1.993 1.263 12c.07.665-.45 1.243-1.119 1.243H4.25a1.125 1.125 0 0,1-1.12-1.243l1.264-12A1.125 1.125 0 0,1 5.513 7.5h12.974c.576 0 1.059.435 1.119 1.007ZM8.625 10.5a.375.375 0 1,1-.75 0 .375.375 0 0,1 .75 0Zm7.5 0a.375.375 0 1,1-.75 0 .375.375 0 0,1 .75 0Z" />
+          </svg>
+          <span class="cart-count" id="cart-count">0</span>
+        </button>
+        <button class="hamburger" id="hamburger" aria-label="Toggle navigation menu" aria-expanded="false" aria-controls="side-drawer">
+          <span class="hamburger__bar"></span>
+          <span class="hamburger__bar"></span>
+          <span class="hamburger__bar"></span>
+        </button>
+      </div>
+    </div>
+    <nav class="mobile-menu" id="mobile-menu" aria-label="Mobile navigation">
+      <ul>
+        <li><a href="/#collection" class="nav-link" data-i18n="nav_new_arrivals">New Arrivals</a></li>
+        <li><a href="/collections" class="nav-link" data-i18n="nav_collection">The Collection</a></li>
+        <li><a href="/#about" class="nav-link" data-i18n="nav_about">About Us</a></li>
+        <li><a href="/collections" class="btn-nav" style="align-self:flex-start" data-i18n="nav_shop_now">Shop Now</a></li>
+      </ul>
+    </nav>
+  </header>
+
+  <!-- SIDE DRAWER BACKDROP -->
+  <div class="side-drawer-backdrop" id="side-drawer-backdrop" aria-hidden="true"></div>
+
+  <!-- SIDE DRAWER -->
+  <aside class="side-drawer" id="side-drawer" role="dialog" aria-modal="true" aria-label="Navigation menu">
+    <div class="side-drawer__header">
+      <button class="side-drawer__close" id="side-drawer-close" aria-label="Close navigation menu">&times;</button>
+    </div>
+    <div class="side-drawer__body">
+      <ul>
+        <li><a href="/#collection" class="nav-link" data-i18n="nav_new_arrivals">New Arrivals</a></li>
+        <li><a href="/collections" class="nav-link" data-i18n="nav_collection">The Collection</a></li>
+        <li><a href="/#about" class="nav-link" data-i18n="nav_about">About Us</a></li>
+      </ul>
+      <a href="/collections" class="btn-nav" data-i18n="nav_shop_now">Shop Now</a>
+    </div>
+    <div class="side-drawer__footer">
+      <button class="side-drawer__lang-btn" id="side-drawer-lang-btn" aria-label="Choose language">
+        <span class="side-drawer__lang-current" id="side-drawer-lang-current">🇫🇷</span>
+        <span class="side-drawer__lang-arrow">▼</span>
+      </button>
+    </div>
+  </aside>
+
+  <!-- GARMENT SELECTOR MODAL -->
+  <div class="garment-modal-overlay" id="garment-modal-overlay" aria-hidden="true">
+    <div class="garment-modal" role="dialog" aria-modal="true" aria-labelledby="garment-modal-title">
+      <button class="garment-modal-close" id="garment-modal-close" aria-label="Fermer la sélection">×</button>
+      <div class="garment-modal-header">
+        <h2 id="garment-modal-title">Choisissez votre vêtement</h2>
+        <p>Commencez par sélectionner le type de produit, puis placez votre design sur la zone souhaitée.</p>
+      </div>
+      <div class="garment-modal-grid" id="garment-modal-grid">
+        <button type="button" class="garment-card co-type-btn active" data-type="tshirt">
+          <span>👕</span>
+          <strong>T-Shirt</strong>
+          <small>Classique, polyvalent</small>
+        </button>
+        <button type="button" class="garment-card co-type-btn" data-type="hoodie">
+          <span>🧥</span>
+          <strong>Hoodie</strong>
+          <small>Style streetwear</small>
+        </button>
+        <button type="button" class="garment-card co-type-btn" data-type="polo">
+          <span>👔</span>
+          <strong>Polo</strong>
+          <small>Élégant et professionnel</small>
+        </button>
+        <button type="button" class="garment-card co-type-btn" data-type="cap">
+          <span>🧢</span>
+          <strong>Casquette</strong>
+          <small>Accessoire tendance</small>
+        </button>
+        <button type="button" class="garment-card co-type-btn" data-type="bob">
+          <span>👒</span>
+          <strong>Bob</strong>
+          <small>Effet urbain</small>
+        </button>
+        <button type="button" class="garment-card co-type-btn" data-type="jogging">
+          <span>👖</span>
+          <strong>Jogging</strong>
+          <small>Confort décontracté</small>
+        </button>
+        <button type="button" class="garment-card co-type-btn" data-type="short">
+          <span>🩳</span>
+          <strong>Short</strong>
+          <small>Idéal pour l'été</small>
+        </button>
+      </div>
+      <div class="garment-modal-foot">
+        <button type="button" class="btn-primary" id="garment-modal-start">Continuer</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- CUSTOMIZATION WORKSPACE -->
+  <main class="co-workspace-container">
+    <div class="co-grid">
+      
+      <!-- LEFT COLUMN: LIVE MOCKUP PREVIEW -->
+      <div class="co-preview-column">
+        <div class="co-preview-sticky">
+          <!-- Active Product Name Floating Badge -->
+          <div class="co-product-floating-info">
+            <span id="co-floating-category">Hoodie</span>
+            <h2 id="co-floating-name">Vescartes Oni Hoodie</h2>
+          </div>
+
+          <!-- Print area selector -->
+          <div class="co-area-buttons" id="co-area-buttons">
+            <button type="button" class="co-area-button active" data-area="Center">Centre poitrine</button>
+            <button type="button" class="co-area-button" data-area="ChestLeft">Poitrine Gauche</button>
+            <button type="button" class="co-area-button" data-area="ChestRight">Poitrine Droite</button>
+            <button type="button" class="co-area-button" data-area="Back">Dos</button>
+            <button type="button" class="co-area-button" data-area="SleeveRight">Manche droite</button>
+            <button type="button" class="co-area-button" data-area="SleeveLeft">Manche gauche</button>
+          </div>
+
+          <!-- Live product preview image -->
+          <div class="co-product-preview" id="co-product-preview">
+            <div class="co-product-preview__image" id="co-product-preview-image"></div>
+          </div>
+
+          <!-- Canvas Workspace Container -->
+          <div class="co-mockup-wrapper">
+            <div class="co-canvas-outer" id="co-canvas-outer">
+              <div class="canvas-container">
+                <canvas id="co-canvas" width="480" height="520" style="touch-action: none;"></canvas>
+                <div class="co-selected-area-label" id="co-selected-area-label">Centre poitrine</div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Canvas Interaction Controls -->
+          <div class="co-canvas-overlay-controls">
+              <button class="co-action-btn" id="co-upload-btn" title="Uploader un design">
+                <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" width="18" height="18"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
+                <span data-i18n="co_upload">Uploader</span>
+              </button>
+              <button class="co-action-btn co-action-btn--danger active" id="co-delete-btn" title="Supprimer l'élément sélectionné">
+                <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" width="18" height="18"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                <span data-i18n="co_delete">Supprimer</span>
+              </button>
+              <input type="file" id="co-file-input" accept="image/png" style="display:none" multiple />
+            </div>
+          </div>
+
+          <!-- Live Mockup Hints -->
+          <p class="co-canvas-hint">
+            <span class="bullet">✦</span> Faites glisser et redimensionnez vos designs librement dans la zone en pointillés.
+          </p>
+        </div>
+      </div>
+
+      <!-- RIGHT COLUMN: CONTROL CENTER -->
+      <div class="co-controls-column">
+        <!-- Steps Header Progress Indicator -->
+        <div class="co-steps-container">
+          <div class="co-steps" id="co-steps">
+            <div class="co-step active" data-step="1">
+              <span class="step-num">1</span>
+              <span class="step-label" data-i18n="co_step_design">Design</span>
+            </div>
+            <div class="co-step-line"></div>
+            <div class="co-step" data-step="2">
+              <span class="step-num">2</span>
+              <span class="step-label" data-i18n="co_step_info">Infos</span>
+            </div>
+            <div class="co-step-line"></div>
+            <div class="co-step" data-step="3">
+              <span class="step-num">3</span>
+              <span class="step-label" data-i18n="co_step_summary">Résumé</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="co-panels-wrapper">
+          <!-- PANEL 1: GARMENT COLORS & DESIGN UPLOADS -->
+          <div class="co-control-panel active" id="co-panel-1">
+            
+            <!-- Garment Type Selector -->
+            <div class="co-section" id="co-type-section">
+              <h3 class="co-section-title" data-i18n="co_garment_type">Type de vêtement / نوع الملابس</h3>
+              <div class="co-type-btns" id="co-type-btns">
+                <button class="co-type-btn active" data-type="tshirt">👕 T-Shirt</button>
+                <button class="co-type-btn" data-type="hoodie">🧥 Hoodie</button>
+                <button class="co-type-btn" data-type="polo">👔 Polo</button>
+                <button class="co-type-btn" data-type="cap">🧢 Cap</button>
+                <button class="co-type-btn" data-type="bob">👒 Bob</button>
+                <button class="co-type-btn" data-type="jogging">👖 Jogging</button>
+                <button class="co-type-btn" data-type="short">🩳 Short</button>
+              </div>
+            </div>
+
+            <!-- Garment Color Picker -->
+            <div class="co-section">
+              <h3 class="co-section-title" data-i18n="co_garment_color">Couleur du vêtement</h3>
+              <div class="co-color-swatches" id="co-color-swatches">
+                <button class="co-swatch active" data-color="#1a1a1a" style="background:#1a1a1a" title="Noir"></button>
+                <button class="co-swatch" data-color="#FFFFFF" style="background:#FFFFFF; border:1px solid #ddd" title="Blanc"></button>
+                <button class="co-swatch" data-color="#D4C5A9" style="background:#D4C5A9" title="Beige"></button>
+                <button class="co-swatch" data-color="#1B2A4A" style="background:#1B2A4A" title="Navy"></button>
+                <button class="co-swatch" data-color="#4A5568" style="background:#4A5568" title="Gris"></button>
+                <button class="co-swatch" data-color="#5B2C1A" style="background:#5B2C1A" title="Marron"></button>
+              </div>
+            </div>
+
+            <!-- Garment Size Selector -->
+            <div class="co-section">
+              <h3 class="co-section-title" data-i18n="co_size">Taille du vêtement</h3>
+              <div class="co-size-btns" id="co-size-btns">
+                <button class="co-size-btn" data-size="S">S</button>
+                <button class="co-size-btn active" data-size="M">M</button>
+                <button class="co-size-btn" data-size="L">L</button>
+                <button class="co-size-btn" data-size="XL">XL</button>
+                <button class="co-size-btn" data-size="XXL">XXL</button>
+              </div>
+            </div>
+
+            <!-- Production Method -->
+            <div class="co-section">
+              <h3 class="co-section-title" data-i18n="co_service_type">Type de Service</h3>
+              <div class="co-service-toggle">
+                <button class="co-service-btn active" data-service="Embroidery">
+                  <span class="co-service-icon">🪡</span>
+                  <div class="co-service-info">
+                    <span class="service-name" data-i18n="co_embroidery">Broderie</span>
+                    <span class="co-service-status co-service-active" data-i18n="co_active">Actif</span>
+                  </div>
+                </button>
+                <button class="co-service-btn disabled" data-service="Print" disabled>
+                  <span class="co-service-icon">🖨️</span>
+                  <div class="co-service-info">
+                    <span class="service-name" data-i18n="co_print">Impression</span>
+                    <span class="co-service-status co-service-soon" data-i18n="co_coming_soon">Bientôt</span>
+                  </div>
+                </button>
+              </div>
+            </div>
+
+            <!-- Drag & Drop Design Box -->
+            <div class="co-section">
+              <h3 class="co-section-title" data-i18n="co_upload_title">Télécharger vos designs (PNG transparent)</h3>
+              <div class="co-upload-dragzone" id="co-upload-dragzone">
+                <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" width="40" height="40"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v6m3-3H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                <p class="dragzone-main-text" data-i18n="co_drag_drop">Glissez-déposez vos logos ici</p>
+                <p class="dragzone-sub-text" data-i18n="co_click_browse">Ou cliquez pour parcourir les fichiers</p>
+              </div>
+            </div>
+
+            <!-- Uploaded Designs Layers List -->
+            <div class="co-section" id="co-layers-section" style="display:none;">
+              <h3 class="co-section-title">Mes Designs Actifs (<span id="co-layers-count">0</span>)</h3>
+              <div class="co-layers-list" id="co-layers-list"></div>
+            </div>
+
+          </div>
+
+          <!-- PANEL 2: CUSTOMER INFORMATION FORM -->
+          <div class="co-control-panel" id="co-panel-2">
+            <h3 class="co-panel-title" data-i18n="co_delivery_info_title">Informations de livraison</h3>
+            <p class="co-panel-desc" data-i18n="co_delivery_info_desc">Veuillez renseigner vos coordonnées pour enregistrer votre commande personnalisée.</p>
+            
+            <form class="co-form" id="co-form" novalidate>
+              <div class="co-form-grid">
+                <div class="co-form-group">
+                  <label for="co-name" data-i18n="co_name">Prénom *</label>
+                  <input type="text" id="co-name" required data-i18n-placeholder="co_name_ph" placeholder="Votre prénom" />
+                </div>
+                <div class="co-form-group">
+                  <label for="co-surname" data-i18n="co_surname">Nom *</label>
+                  <input type="text" id="co-surname" required data-i18n-placeholder="co_surname_ph" placeholder="Votre nom" />
+                </div>
+                <div class="co-form-group">
+                  <label for="co-email" data-i18n="co_email">Email *</label>
+                  <input type="email" id="co-email" required data-i18n-placeholder="co_email_ph" placeholder="Ex: email@exemple.com" />
+                </div>
+                <div class="co-form-group">
+                  <label for="co-phone" data-i18n="co_phone">Téléphone *</label>
+                  <input type="tel" id="co-phone" required data-i18n-placeholder="co_phone_ph" placeholder="05 / 06 / 07 XX XX XX XX" />
+                </div>
+                <div class="co-form-group co-form-full">
+                  <label for="co-province" data-i18n="co_province">Wilaya *</label>
+                  <select id="co-province" required>
+                    <option value="" disabled selected>Choisir la wilaya...</option>
+                    <option value="1 - Adrar">1 - أدرار (Adrar)</option>
+                    <option value="2 - Chlef">2 - الشلف (Chlef)</option>
+                    <option value="3 - Laghouat">3 - الأغواط (Laghouat)</option>
+                    <option value="4 - Oum El Bouaghi">4 - أم البواقي (Oum El Bouaghi)</option>
+                    <option value="5 - Batna">5 - باتنة (Batna)</option>
+                    <option value="6 - Béjaïa">6 - بجاية (Béjaïa)</option>
+                    <option value="7 - Biskra">7 - بسكرة (Biskra)</option>
+                    <option value="8 - Béchar">8 - بشار (Béchar)</option>
+                    <option value="9 - Blida">9 - البليدة (Blida)</option>
+                    <option value="10 - Bouira">10 - البويرة (Bouira)</option>
+                    <option value="11 - Tamanrasset">11 - تمنراست (Tamanrasset)</option>
+                    <option value="12 - Tébessa">12 - تبسة (Tébessa)</option>
+                    <option value="13 - Tlemcen">13 - تلمسان (Tlemcen)</option>
+                    <option value="14 - Tiaret">14 - تيارت (Tiaret)</option>
+                    <option value="15 - Tizi Ouzou">15 - تيزي وزو (Tizi Ouzou)</option>
+                    <option value="16 - Algiers">16 - الجزائر (Algiers)</option>
+                    <option value="17 - Djelfa">17 - الجلفة (Djelfa)</option>
+                    <option value="18 - Jijel">18 - جيجل (Jijel)</option>
+                    <option value="19 - Sétif">19 - سطيف (Sétif)</option>
+                    <option value="20 - Saïda">20 - سعيدة (Saïda)</option>
+                    <option value="21 - Skikda">21 - سكيكدة (Skikda)</option>
+                    <option value="22 - Sidi Bel Abbès">22 - سيدي بلعباس (Sidi Bel Abbès)</option>
+                    <option value="23 - Annaba">23 - عنابة (Annaba)</option>
+                    <option value="24 - Guelma">24 - قالمة (Guelma)</option>
+                    <option value="25 - Constantine">25 - قسنطينة (Constantine)</option>
+                    <option value="26 - Médéa">26 - المدية (Médéa)</option>
+                    <option value="27 - Mostaganem">27 - مستغانم (Mostaganem)</option>
+                    <option value="28 - M'Sila">28 - المسيلة (M'Sila)</option>
+                    <option value="29 - Mascara">29 - معسكر (Mascara)</option>
+                    <option value="30 - Ouargla">30 - ورقلة (Ouargla)</option>
+                    <option value="31 - Oran">31 - وهران (Oran)</option>
+                    <option value="32 - El Bayadh">32 - البيض (El Bayadh)</option>
+                    <option value="33 - Illizi">33 - إليزي (Illizi)</option>
+                    <option value="34 - Bordj Bou Arréridj">34 - برج بوعريريج (Bordj Bou Arréridj)</option>
+                    <option value="35 - Boumerdès">35 - بومرداس (Boumerdès)</option>
+                    <option value="36 - El Tarf">36 - الطارف (El Tarf)</option>
+                    <option value="37 - Tindouf">37 - تندوف (Tindouf)</option>
+                    <option value="38 - Tissemsilt">38 - تسمسيلت (Tissemsilt)</option>
+                    <option value="39 - El Oued">39 - الوادي (El Oued)</option>
+                    <option value="40 - Khenchela">40 - خنشلة (Khenchela)</option>
+                    <option value="41 - Souk Ahras">41 - سوق أهراس (Souk Ahras)</option>
+                    <option value="42 - Tipaza">42 - تيبازة (Tipaza)</option>
+                    <option value="43 - Mila">43 - ميلة (Mila)</option>
+                    <option value="44 - Aïn Defla">44 - عين الدفلة (Aïn Defla)</option>
+                    <option value="45 - Naâma">45 - النعامة (Naâma)</option>
+                    <option value="46 - Aïn Témouchent">46 - عين تموشنت (Aïn Témouchent)</option>
+                    <option value="47 - Ghardaïa">47 - غرداية (Ghardaïa)</option>
+                    <option value="48 - Relizane">48 - غليزان (Relizane)</option>
+                    <option value="49 - El M'Ghair">49 - المغير (El M'Ghair)</option>
+                    <option value="50 - El Meniaa">50 - المنيعة (El Meniaa)</option>
+                    <option value="51 - Ouled Djellal">51 - أولاد جلال (Ouled Djellal)</option>
+                    <option value="52 - Bordj Baji Mokhtar">52 - برج باجي مختار (BBM)</option>
+                    <option value="53 - Béni Abbès">53 - بني عباس (Béni Abbès)</option>
+                    <option value="54 - In Salah">54 - عين صالح (In Salah)</option>
+                    <option value="55 - In Guezzam">55 - عين قزام (In Guezzam)</option>
+                    <option value="56 - Touggourt">56 - تقرت (Touggourt)</option>
+                    <option value="57 - Djanet">57 - جانت (Djanet)</option>
+                    <option value="58 - El M'Ghair 2">58 - المغير (El M'Ghair)</option>
+                  </select>
+                </div>
+                <div class="co-form-group co-form-full">
+                  <label for="co-notes" data-i18n="co_notes">Notes</label>
+                  <textarea id="co-notes" rows="4" data-i18n-placeholder="co_notes_ph" placeholder="Instructions spéciales... Ex: broderie en fils dorés, dimensions précises du logo..."></textarea>
+                </div>
+              </div>
+            </form>
+          </div>
+
+          <!-- PANEL 3: ORDER SUMMARY -->
+          <div class="co-control-panel" id="co-panel-3">
+            <h3 class="co-panel-title" data-i18n="co_order_summary">Récapitulatif de la commande</h3>
+            <p class="co-panel-desc" data-i18n="co_summary_desc">Veuillez vérifier les informations ci-dessous avant de soumettre définitivement votre commande.</p>
+            
+            <div class="co-summary-container">
+              <!-- Live Mockup Thumbnail -->
+              <div class="co-summary-mockup">
+                <img id="co-summary-img" src="" alt="Final Mockup" />
+              </div>
+
+              <!-- Summary Specifications Table -->
+              <div class="co-summary-details">
+                <div class="co-summary-table">
+                  <div class="co-summary-row">
+                    <span data-i18n="co_product">Produit</span>
+                    <span id="co-sum-product" class="sum-value">-</span>
+                  </div>
+                  <div class="co-summary-row">
+                    <span data-i18n="co_garment_color">Couleur</span>
+                    <span id="co-sum-color" class="sum-value">-</span>
+                  </div>
+                  <div class="co-summary-row">
+                    <span data-i18n="co_size">Taille</span>
+                    <span id="co-sum-size" class="sum-value">-</span>
+                  </div>
+                  <div class="co-summary-row">
+                    <span data-i18n="co_service_type">Service</span>
+                    <span id="co-sum-service" class="sum-value">-</span>
+                  </div>
+                  <div class="co-summary-row">
+                    <span data-i18n="co_placements">Placements</span>
+                    <span id="co-sum-placements" class="sum-value">-</span>
+                  </div>
+                  <div class="co-summary-row">
+                    <span data-i18n="co_num_designs">Nombre de designs</span>
+                    <span id="co-sum-designs-count" class="sum-value">0</span>
+                  </div>
+                  <div class="co-summary-row">
+                    <span data-i18n="co_customer">Client</span>
+                    <span id="co-sum-customer" class="sum-value">-</span>
+                  </div>
+                  <div class="co-summary-row">
+                    <span data-i18n="co_phone">Téléphone</span>
+                    <span id="co-sum-phone" class="sum-value">-</span>
+                  </div>
+                  <div class="co-summary-row">
+                    <span data-i18n="co_province">Wilaya</span>
+                    <span id="co-sum-province" class="sum-value">-</span>
+                  </div>
+                  <div class="co-summary-row co-summary-row--notes">
+                    <span data-i18n="co_notes">Notes</span>
+                    <span id="co-sum-notes" class="sum-value">-</span>
+                  </div>
+                </div>
+
+                <div class="co-summary-designs">
+                  <div class="co-summary-designs-header">
+                    <strong>Designs téléchargés</strong>
+                    <span id="co-sum-designs-label">Aucun design</span>
+                  </div>
+                  <div class="co-summary-designs-list" id="co-sum-designs-list"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- FOOTER NAVIGATION BUTTONS -->
+        <div class="co-navigation-footer">
+          <button class="co-nav-btn co-nav-prev" id="co-prev" style="display:none" data-i18n="co_prev">
+            ← Précédent
+          </button>
+          <button class="co-nav-btn co-nav-next" id="co-next" data-i18n="co_next">
+            Suivant →
+          </button>
+          <button type="button" class="co-nav-btn co-nav-submit" id="co-submit" style="display:none" data-i18n="co_confirm">
+            ✓ Confirmer la commande
+          </button>
+        </div>
+
+      </div>
+
+    </div>
+  </main>
+
+  <!-- SUCCESS MODAL DIALOG OVERLAY -->
+  <div class="co-success-overlay" id="co-success-overlay" style="display:none;">
+    <div class="co-success-card">
+      <div class="co-success-icon-wrap">
+        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" width="40" height="40"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+      </div>
+      <h3 class="co-success-title" data-i18n="co_success_title">Commande envoyée avec succès !</h3>
+      <p class="co-success-desc" data-i18n="co_success_desc">Nous avons bien reçu votre commande personnalisée. Notre équipe vous contactera bientôt.</p>
+      <p class="co-success-redirect-msg" id="co-success-redirect-msg" style="font-size:0.85rem; color:#64748b; margin-top:0.5rem;">سيتم توجيهك للصفحة الرئيسية خلال <span id="co-redirect-counter">5</span> ثوانٍ...</p>
+      <div style="display:flex; justify-content:center; margin-top:0.5rem; width:100%;">
+        <button class="btn-primary co-success-close-btn" id="co-success-close" style="width:100%; max-width:280px;">🛍️ العودة للرئيسية</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <footer class="footer" id="contact" role="contentinfo">
+    <div class="footer__inner">
+      <div class="footer__grid">
+        <div class="footer-col">
+          <p class="footer-tagline" data-i18n="foot_tagline">Curated essentials for a more intentional life.<br/>Proudly Algerian.</p>
+        </div>
+        <div class="footer-col">
+          <h4 data-i18n="foot_shop">Shop</h4>
+          <ul>
+            <li><a href="/#collection" data-i18n="foot_new_arrivals">New Arrivals</a></li>
+            <li><a href="#" data-i18n="foot_best_sellers">Best Sellers</a></li>
+            <li><a href="#" data-i18n="foot_home_living">Home & Living</a></li>
+            <li><a href="#" data-i18n="foot_accessories">Accessories</a></li>
+          </ul>
+        </div>
+        <div class="footer-col">
+          <h4 data-i18n="foot_info">Info</h4>
+          <ul>
+            <li><a href="/#about" data-i18n="foot_our_story">Our Story</a></li>
+            <li><a href="#" data-i18n="foot_shipping">Shipping & Returns</a></li>
+            <li><a href="#" data-i18n="foot_privacy">Privacy Policy</a></li>
+            <li><a href="#" data-i18n="foot_faq">FAQ</a></li>
+          </ul>
+        </div>
+        <div class="footer-col">
+          <h4 data-i18n="foot_contact">Contact</h4>
+          <ul>
+            <li class="contact-item">
+              <svg fill="none" viewBox="0 0 24 24" stroke-width="1.5" width="16" height="16"><path stroke-linecap="round" stroke-linejoin="round" d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+              <a href="mailto:contact@aizo.dz">contact@aizo.dz</a>
+            </li>
+          </ul>
+        </div>
+      </div>
+      <div class="footer__bottom">
+        <p class="footer__copy" data-i18n="foot_copy">© 2026 AIZO.DZ — All rights reserved.</p>
+        <p class="footer__made" data-i18n="foot_made">Made with intention · Algeria</p>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Cart Drawer (full version with checkout form) -->
+  <div class="cart-drawer-backdrop" id="cart-drawer-backdrop" aria-hidden="true"></div>
+  <aside class="cart-drawer" id="cart-drawer" role="dialog" aria-modal="true" aria-labelledby="cart-drawer-title">
+    <div class="cart-drawer__header">
+      <h2 id="cart-drawer-title">سلة المشتريات <span>/ Cart</span></h2>
+      <button class="btn-close-cart" id="btn-close-cart" aria-label="Close cart">×</button>
+    </div>
+
+    <div class="cart-drawer__body">
+      <!-- Empty State -->
+      <div class="cart-empty" id="cart-empty">
+        <div class="cart-empty__icon">✦</div>
+        <p class="cart-empty__text-ar">السلة فارغة حالياً</p>
+        <p class="cart-empty__text-en">Your cart is empty</p>
+        <a href="/collections" class="btn-primary" id="btn-empty-shop">تسوق الآن / Shop Now</a>
+      </div>
+
+      <!-- Cart Items list -->
+      <div class="cart-items" id="cart-items-list">
+        <!-- Injected by JS -->
+      </div>
+
+      <!-- Summary & Checkout Form -->
+      <div class="cart-checkout-section" id="cart-checkout-section" style="display: none;">
+        <div class="cart-summary">
+          <div class="summary-row">
+            <span>المجموع الفرعي / Subtotal</span>
+            <span id="cart-subtotal">0 DZD</span>
+          </div>
+          <div class="summary-row">
+            <span>شحن التوصيل / Shipping</span>
+            <span id="cart-shipping">-- DZD</span>
+          </div>
+          <div class="summary-row summary-total">
+            <span>الإجمالي / Total</span>
+            <span id="cart-total">0 DZD</span>
+          </div>
+        </div>
+
+        <form class="checkout-form" id="checkout-form" autocomplete="on">
+          <h3>معلومات التوصيل <span>/ Delivery Info</span></h3>
+
+          <div class="form-group-row" style="display: flex; gap: 0.75rem;">
+            <div class="form-group" style="flex: 1;">
+              <label for="checkout-name">الاسم / First Name *</label>
+              <input type="text" id="checkout-name" placeholder="الاسم الشخصي" required />
+              <span class="error-msg" id="err-name">يرجى إدخال الاسم</span>
+            </div>
+            <div class="form-group" style="flex: 1;">
+              <label for="checkout-surname">اللقب / Last Name *</label>
+              <input type="text" id="checkout-surname" placeholder="اللقب العائلي" required />
+              <span class="error-msg" id="err-surname">يرجى إدخال اللقب</span>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="checkout-phone">رقم الهاتف / Phone Number *</label>
+            <input type="tel" id="checkout-phone" placeholder="05 / 06 / 07 XX XX XX XX" required />
+            <span class="error-msg" id="err-phone">يرجى إدخال رقم هاتف صحيح (10 أرقام)</span>
+          </div>
+
+          <div class="form-group">
+            <label for="checkout-wilaya">الولاية / State *</label>
+            <select id="checkout-wilaya" required>
+              <option value="" disabled selected>اختر الولاية...</option>
+              <option value="1 - أدرار (Adrar)">1 - أدرار (Adrar)</option>
+              <option value="2 - الشلف (Chlef)">2 - الشلف (Chlef)</option>
+              <option value="3 - الأغواط (Laghouat)">3 - الأغواط (Laghouat)</option>
+              <option value="4 - أم البواقي (Oum El Bouaghi)">4 - أم البواقي (Oum El Bouaghi)</option>
+              <option value="5 - باتنة (Batna)">5 - باتنة (Batna)</option>
+              <option value="6 - بجاية (Béjaïa)">6 - بجاية (Béjaïa)</option>
+              <option value="7 - بسكرة (Biskra)">7 - بسكرة (Biskra)</option>
+              <option value="8 - بشار (Béchar)">8 - بشار (Béchar)</option>
+              <option value="9 - البليدة (Blida)">9 - البليدة (Blida)</option>
+              <option value="10 - البويرة (Bouira)">10 - البويرة (Bouira)</option>
+              <option value="11 - تمنراست (Tamanrasset)">11 - تمنراست (Tamanrasset)</option>
+              <option value="12 - تبسة (Tébessa)">12 - تبسة (Tébessa)</option>
+              <option value="13 - تلمسان (Tlemcen)">13 - تلمسان (Tlemcen)</option>
+              <option value="14 - تيارت (Tiaret)">14 - تيارت (Tiaret)</option>
+              <option value="15 - تيزي وزو (Tizi Ouzou)">15 - تيزي وزو (Tizi Ouzou)</option>
+              <option value="16 - الجزائر (Algiers)">16 - الجزائر (Algiers)</option>
+              <option value="17 - الجلفة (Djelfa)">17 - الجلفة (Djelfa)</option>
+              <option value="18 - جيجل (Jijel)">18 - جيجل (Jijel)</option>
+              <option value="19 - سطيف (Sétif)">19 - سطيف (Sétif)</option>
+              <option value="20 - سعيدة (Saïda)">20 - سعيدة (Saïda)</option>
+              <option value="21 - سكيكدة (Skikda)">21 - سكيكدة (Skikda)</option>
+              <option value="22 - سيدي بلعباس (Sidi Bel Abbès)">22 - سيدي بلعباس (Sidi Bel Abbès)</option>
+              <option value="23 - عنابة (Annaba)">23 - عنابة (Annaba)</option>
+              <option value="24 - قالمة (Guelma)">24 - قالمة (Guelma)</option>
+              <option value="25 - قسنطينة (Constantine)">25 - قسنطينة (Constantine)</option>
+              <option value="26 - المدية (Médéa)">26 - المدية (Médéa)</option>
+              <option value="27 - مستغانم (Mostaganem)">27 - مستغانم (Mostaganem)</option>
+              <option value="28 - المسيلة (M'Sila)">28 - المسيلة (M'Sila)</option>
+              <option value="29 - معسكر (Mascara)">29 - معسكر (Mascara)</option>
+              <option value="30 - ورقلة (Ouargla)">30 - ورقلة (Ouargla)</option>
+              <option value="31 - وهران (Oran)">31 - وهران (Oran)</option>
+              <option value="32 - البيض (El Bayadh)">32 - البيض (El Bayadh)</option>
+              <option value="33 - إليزي (Illizi)">33 - إليزي (Illizi)</option>
+              <option value="34 - برج بوعريريج (Bordj Bou Arréridj)">34 - برج بوعريريج (Bordj Bou Arréridj)</option>
+              <option value="35 - بومرداس (Boumerdès)">35 - بومرداس (Boumerdès)</option>
+              <option value="36 - الطارف (El Tarf)">36 - الطارف (El Tarf)</option>
+              <option value="37 - تندوف (Tindouf)">37 - تندوف (Tindouf)</option>
+              <option value="38 - تسمسيلت (Tissemsilt)">38 - تسمسيلت (Tissemsilt)</option>
+              <option value="39 - الوادي (El Oued)">39 - الوادي (El Oued)</option>
+              <option value="40 - خنشلة (Khenchela)">40 - خنشلة (Khenchela)</option>
+              <option value="41 - سوق أهراس (Souk Ahras)">41 - سوق أهراس (Souk Ahras)</option>
+              <option value="42 - تيبازة (Tipaza)">42 - تيبازة (Tipaza)</option>
+              <option value="43 - ميلة (Mila)">43 - ميلة (Mila)</option>
+              <option value="44 - عين الدفلة (Aïn Defla)">44 - عين الدفلة (Aïn Defla)</option>
+              <option value="45 - النعامة (Naâma)">45 - النعامة (Naâma)</option>
+              <option value="46 - عين تموشنت (Aïn Témouchent)">46 - عين تموشنت (Aïn Témouchent)</option>
+              <option value="47 - غرداية (Ghardaïa)">47 - غرداية (Ghardaïa)</option>
+              <option value="48 - غليزان (Relizane)">48 - غليزان (Relizane)</option>
+              <option value="49 - المغير (El M'Ghair)">49 - المغير (El M'Ghair)</option>
+              <option value="50 - المنيعة (El Meniaa)">50 - المنيعة (El Meniaa)</option>
+              <option value="51 - أولاد جلال (Ouled Djellal)">51 - أولاد جلال (Ouled Djellal)</option>
+              <option value="52 - برج باجي مختار (Bordj Baji Mokhtar)">52 - برج باجي مختار (Bordj Baji Mokhtar)</option>
+              <option value="53 - بني عباس (Béni Abbès)">53 - بني عباس (Béni Abbès)</option>
+              <option value="54 - عين صالح (In Salah)">54 - عين صالح (In Salah)</option>
+              <option value="55 - عين قزام (In Guezzam)">55 - عين قزام (In Guezzam)</option>
+              <option value="56 - تقرت (Touggourt)">56 - تقرت (Touggourt)</option>
+              <option value="57 - جانت (Djanet)">57 - جانت (Djanet)</option>
+              <option value="58 - المغير (El M'Ghair)">58 - المغير (El M'Ghair)</option>
+            </select>
+            <span class="error-msg" id="err-wilaya">يرجى اختيار الولاية</span>
+          </div>
+
+          <div class="form-group">
+            <label>نوع التوصيل / Delivery Type *</label>
+            <div class="delivery-options">
+              <label class="delivery-option-card">
+                <input type="radio" name="delivery-type" value="home" checked />
+                <div class="option-content">
+                  <span class="option-title" data-i18n="delivery_home">التوصيل إلى المنزل (A DOMICILE)</span>
+                  <span class="option-desc"><span data-i18n="delivery_home_desc">الدفع عند الاستلام بباب المنزل</span> · <strong id="home-delivery-price"></strong></span>
+                </div>
+              </label>
+              <label class="delivery-option-card">
+                <input type="radio" name="delivery-type" value="office" />
+                <div class="option-content">
+                  <span class="option-title" data-i18n="delivery_office">التوصيل إلى المكتب (STOP DESK)</span>
+                  <span class="option-desc"><span data-i18n="delivery_office_desc">الاستلام من مكتب شركة التوصيل</span> · <strong id="office-delivery-price"></strong></span>
+                </div>
+              </label>
+            </div>
+          </div>
+
+          <div class="form-group" id="home-address-group">
+            <label for="checkout-address">العنوان التفصيلي / Home Address *</label>
+            <div class="input-with-icon" style="position: relative; display: flex; align-items: center;">
+              <span class="input-icon" style="position: absolute; right: 10px; top: 12px; color: var(--color-stone-400); pointer-events: none;">
+                <svg fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" style="width: 18px; height: 18px;">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12l8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25" />
+                </svg>
+              </span>
+              <textarea
+                id="checkout-address"
+                placeholder="مثال: حي السلام، شارع الأمير، رقم 12، الطابق الثاني"
+                rows="3"
+                style="padding-right: 2.25rem;"
+                required
+              ></textarea>
+            </div>
+            <span class="error-msg" id="err-address">يرجى إدخال عنوان المنزل</span>
+          </div>
+
+          <div class="form-group" id="office-select-group" style="display: none;">
+            <label for="checkout-office">مكتب التوصيل / Shipping Office *</label>
+            <div class="input-with-icon" style="position: relative; display: flex; align-items: center;">
+              <span class="input-icon" style="position: absolute; right: 10px; top: 12px; color: var(--color-stone-400); pointer-events: none;">
+                <svg fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" style="width: 18px; height: 18px;">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M12 21v-8.25M15.75 21v-8.25M8.25 21v-8.25M3 9l9-6 9 6m-1.5 12V10.332A48.36 48.36 0 0012 9.75c-2.551 0-5.053.244-7.5 1.724V21a1.5 1.5 0 001.5 1.5h15a1.5 1.5 0 001.5-1.5z" />
+                </svg>
+              </span>
+              <select id="checkout-office" style="padding-right: 2.25rem;">
+                <option value="" disabled selected>اختر مكتب التوصيل...</option>
+              </select>
+            </div>
+            <span class="error-msg" id="err-office">يرجى اختيار مكتب التوصيل</span>
+          </div>
+
+          <button type="button" class="btn-primary btn-checkout" id="co-form-next">
+            تأكيد الطلب / Confirm Order
+          </button>
+          <div class="error-alert" id="checkout-error-alert" style="display: none;">
+            <span class="error-icon">⚠️</span>
+            <div class="error-content">
+              <p id="checkout-error-text">حدث خطأ أثناء معالجة الطلب</p>
+            </div>
+            <button type="button" class="error-close" id="checkout-error-close">×</button>
+          </div>
+        </form>
+      </div>
+
+      <!-- Success Screen -->
+      <div class="order-success-screen" id="order-success-screen" style="display: none;">
+        <div class="success-icon">✓</div>
+        <h2>تم تسجيل طلبك بنجاح!</h2>
+        <p class="success-subtitle">شكراً لثقتكم. سنقوم بالاتصال بكم هاتفياً قريباً لتأكيد الطلب وشحنه.</p>
+        
+        <div class="order-details-card">
+          <div class="details-row">
+            <span>رقم الطلب:</span>
+            <strong id="success-order-id">#00000</strong>
+          </div>
+          <div class="details-row">
+            <span>الاسم:</span>
+            <span id="success-order-name">-</span>
+          </div>
+          <div class="details-row">
+            <span>الهاتف:</span>
+            <span id="success-order-phone">-</span>
+          </div>
+          <div class="details-row">
+            <span>الولاية:</span>
+            <span id="success-order-wilaya">-</span>
+          </div>
+          <div class="details-row">
+            <span>التوصيل إلى:</span>
+            <span id="success-order-delivery">-</span>
+          </div>
+          <div class="details-row total-row">
+            <span>المجموع الإجمالي:</span>
+            <strong id="success-order-total">0 DZD</strong>
+          </div>
+        </div>
+
+        <button class="btn-primary" id="btn-success-close">متابعة التسوق / Continue Shopping</button>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Scripts -->
+  <!-- EmailJS SDK -->
+  <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+  <script src="js/config.js"></script>
+  <script src="js/products.js"></script>
+  <script src="js/i18n.js"></script>
+  <script src="js/sync.js"></script>
+  <script src="js/main.js"></script>
+  <script src="js/customize.js"></script>
+</body>
+</html>

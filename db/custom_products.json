@@ -1,0 +1,46 @@
+[
+  {
+    "isCustom": true,
+    "name": "Nike Performance UNISEX",
+    "sub": "Nike Performance UNISEX",
+    "category": "تي شيرت",
+    "price": "5 000",
+    "badge": null,
+    "badgeType": null,
+    "stars": 5,
+    "reviews": 12,
+    "img": "https://i.pinimg.com/1200x/38/ab/79/38ab79e883f3b750ff74641c2533c5f0.jpg",
+    "alt": "Nike Performance UNISEX",
+    "sizes": [
+      "S",
+      "M",
+      "L"
+    ],
+    "colors": [
+      "بدون لون"
+    ],
+    "stock": 10,
+    "id": 1782133352858
+  },
+  {
+    "isCustom": true,
+    "name": "BTS Cap",
+    "sub": "Arirang Collection",
+    "category": "أكسسوارات",
+    "price": "8",
+    "badge": "New",
+    "badgeType": "new",
+    "stars": 5,
+    "reviews": 12,
+    "img": "https://i.pinimg.com/1200x/39/a2/4a/39a24aa026b036075b7f3cc1ce8520c8.jpg",
+    "alt": "BTS Cap",
+    "sizes": [],
+    "colors": [
+      "أسود",
+      "أبيض",
+      "أزرق"
+    ],
+    "stock": 20,
+    "id": 1782583935644
+  }
+]

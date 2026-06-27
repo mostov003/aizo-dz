@@ -1,0 +1,289 @@
+﻿<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>لوحة التحكم — aizo.dz</title>
+  
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+  
+  <!-- Stylesheet -->
+  <link rel="stylesheet" href="css/admin.css">
+</head>
+<body>
+
+  <!-- ════════════════════════════════════════════
+       LOGIN SCREEN
+  ════════════════════════════════════════════ -->
+  <div class="login-overlay" id="login-overlay">
+    <div class="login-card">
+      <div class="login-logo">aizo<span>.dz</span></div>
+      <h2>تسجيل الدخول للمشرف</h2>
+      <p>يرجى إدخال الرمز السري للوصول إلى لوحة التحكم</p>
+      
+      <form id="login-form">
+        <div class="form-group">
+          <input type="password" id="admin-password" placeholder="الرمز السري (الافتراضي: admin123)" required autocomplete="current-password">
+          <span class="error-text" id="login-error">الرمز السري غير صحيح!</span>
+        </div>
+        <button type="submit" class="btn-admin-primary">دخول لوحة التحكم</button>
+      </form>
+      <a href="index.html" class="btn-back-store">← العودة إلى المتجر</a>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════════
+       DASHBOARD CONTENT
+  ════════════════════════════════════════════ -->
+  <div class="admin-wrapper" id="admin-wrapper" style="display: none;">
+    
+    <!-- Sidebar -->
+    <aside class="admin-sidebar">
+      <div class="sidebar-brand">
+        <a href="index.html" class="logo">aizo<span>.dz</span></a>
+        <span class="badge-role">مسؤول المتجر</span>
+      </div>
+      
+      <nav class="sidebar-nav">
+        <ul>
+          <li><button class="nav-btn active" data-target="panel-stats">✦ الإحصائيات العامة</button></li>
+          <li><button class="nav-btn" data-target="panel-orders" id="orders-menu-btn">📦 إدارة الطلبات <span class="nav-badge" id="pending-badge">0</span></button></li>
+          <li><button class="nav-btn" data-target="panel-add-product">✨ إضافة منتج جديد</button></li>
+          <li><button class="nav-btn" data-target="panel-products">🛍️ قائمة المنتجات</button></li>
+        </ul>
+      </nav>
+      
+      <div class="sidebar-footer">
+        <button class="btn-logout" id="btn-logout">تسجيل الخروج</button>
+        <a href="index.html" class="btn-back-store-sidebar">← العودة للمتجر</a>
+      </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="admin-main">
+      <header class="admin-header">
+        <h1 id="panel-title">الإحصائيات العامة</h1>
+        <div class="admin-user-profile">
+          <span class="dot-status"></span>
+          <span>لوحة المشرف متصلة</span>
+        </div>
+      </header>
+
+      <!-- Panel: Stats -->
+      <section class="admin-panel active" id="panel-stats">
+        <div class="stats-grid">
+          
+          <div class="stat-card">
+            <div class="stat-icon">💰</div>
+            <div class="stat-details">
+              <h3>إجمالي المبيعات المؤكدة</h3>
+              <p class="stat-value" id="stat-sales">0 DZD</p>
+              <span class="stat-sub">من الطلبات المؤكدة فقط</span>
+            </div>
+          </div>
+          
+          <div class="stat-card">
+            <div class="stat-icon">📦</div>
+            <div class="stat-details">
+              <h3>إجمالي عدد الطلبات</h3>
+              <p class="stat-value" id="stat-orders-total">0</p>
+              <span class="stat-sub" id="stat-orders-pending">0 طلب معلق في الانتظار</span>
+            </div>
+          </div>
+          
+          <div class="stat-card">
+            <div class="stat-icon">👕</div>
+            <div class="stat-details">
+              <h3>عدد المنتجات النشطة</h3>
+              <p class="stat-value" id="stat-products-total">0</p>
+              <span class="stat-sub">المعروضة حالياً بالمتجر</span>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Latest Orders Section in Stats -->
+        <div class="recent-box">
+          <h2>آخر الطلبات الواردة</h2>
+          <div class="table-responsive">
+            <table class="admin-table">
+              <thead>
+                <tr>
+                  <th>رقم الطلب</th>
+                  <th>تاريخ الطلب</th>
+                  <th>الزبون</th>
+                  <th>الولاية</th>
+                  <th>الهاتف</th>
+                  <th>نوع التوصيل</th>
+                  <th>المجموع</th>
+                  <th>الحالة</th>
+                </tr>
+              </thead>
+              <tbody id="recent-orders-list">
+                <!-- Injected by JS -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- Panel: Orders Management -->
+      <section class="admin-panel" id="panel-orders">
+        <div class="filter-bar">
+          <button class="filter-btn active" data-filter="all">الكل</button>
+          <button class="filter-btn" data-filter="Pending">📦 معلقة قيد الانتظار</button>
+          <button class="filter-btn" data-filter="Confirmed">✓ مؤكدة</button>
+          <button class="filter-btn" data-filter="Cancelled">✗ ملغاة</button>
+        </div>
+
+        <div class="table-responsive">
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th>رقم الطلب</th>
+                <th>التاريخ</th>
+                <th>العميل</th>
+                <th>الهاتف</th>
+                <th>الولاية</th>
+                <th>طريقة الاستلام</th>
+                <th>المنتجات المطلوبة</th>
+                <th>المجموع الإجمالي</th>
+                <th>الحالة</th>
+                <th>الإجراءات</th>
+              </tr>
+            </thead>
+            <tbody id="admin-orders-list">
+              <!-- Injected by JS -->
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- Panel: Add Product -->
+      <section class="admin-panel" id="panel-add-product">
+        <div class="form-container">
+          <h2>إضافة منتج جديد للمتجر</h2>
+          <p>املأ التفاصيل التالية ليتم عرض المنتج مباشرة في الصفحة الرئيسية للمتجر.</p>
+
+          <form id="add-product-form">
+            <div class="form-grid">
+              
+              <div class="form-group">
+                <label for="prod-name">اسم المنتج *</label>
+                <input type="text" id="prod-name" placeholder="مثال: Vescartes Ronin Jacket" required>
+              </div>
+
+              <div class="form-group">
+                <label for="prod-sub">الوصف المختصر (Collection/Subtitle) *</label>
+                <input type="text" id="prod-sub" placeholder="مثال: Edo collection أو Vescartes" required>
+              </div>
+
+              <div class="form-group">
+                <label for="prod-price">السعر (DZD) *</label>
+                <input type="number" id="prod-price" placeholder="مثال: 12500" required>
+              </div>
+
+              <div class="form-group">
+                <label for="prod-badge">علامة المنتج (Badge) - اختياري</label>
+                <select id="prod-badge">
+                  <option value="">لا توجد علامة</option>
+                  <option value="New">جديد (New)</option>
+                  <option value="Sale">تخفيض (Sale)</option>
+                  <option value="Limited">محدود (Limited)</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label for="prod-stars">التقييم الافتراضي (النجوم) *</label>
+                <select id="prod-stars" required>
+                  <option value="5" selected>★★★★★ (5)</option>
+                  <option value="4">★★★★☆ (4)</option>
+                  <option value="3">★★★☆☆ (3)</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label for="prod-reviews">عدد المراجعات الافتراضي *</label>
+                <input type="number" id="prod-reviews" value="12" required>
+              </div>
+
+              <div class="form-group full-width">
+                <label for="prod-img">رابط صورة المنتج (URL) *</label>
+                <input type="url" id="prod-img" placeholder="أدخل رابط صورة مباشر من الإنترنت (أو ضع صورة Pinterest/Imgur)" required>
+                <span class="help-text">يمكنك نسخ رابط أي صورة للملابس من الإنترنت لاستخدامها كصورة توضيحية.</span>
+              </div>
+
+              <div class="form-group full-width">
+                <label>المقاسات المتاحة للمنتج (اختر واحداً أو أكثر) *</label>
+                <div class="sizes-checklist">
+                  <label class="checkbox-card">
+                    <input type="checkbox" name="prod-sizes" value="S">
+                    <span>S</span>
+                  </label>
+                  <label class="checkbox-card">
+                    <input type="checkbox" name="prod-sizes" value="M">
+                    <span>M</span>
+                  </label>
+                  <label class="checkbox-card">
+                    <input type="checkbox" name="prod-sizes" value="L">
+                    <span>L</span>
+                  </label>
+                  <label class="checkbox-card">
+                    <input type="checkbox" name="prod-sizes" value="XL">
+                    <span>XL</span>
+                  </label>
+                  <label class="checkbox-card">
+                    <input type="checkbox" name="prod-sizes" value="XXL">
+                    <span>XXL</span>
+                  </label>
+                </div>
+                <span class="help-text">إذا لم يتم اختيار أي مقاس، فسيتم إضافة المنتج مباشرة للسلة عند الطلب دون إظهار نافذة اختيار المقاسات.</span>
+              </div>
+
+            </div>
+
+            <div class="form-actions">
+              <button type="submit" class="btn-admin-primary">حفظ وإضافة المنتج للمتجر</button>
+              <button type="reset" class="btn-admin-secondary">إعادة التعيين</button>
+            </div>
+          </form>
+
+          <div class="toast-success" id="product-toast">✓ تم إضافة المنتج بنجاح وتحديث المتجر!</div>
+        </div>
+      </section>
+
+      <!-- Panel: Products List -->
+      <section class="admin-panel" id="panel-products">
+        <div class="products-list-header">
+          <h2>المنتجات المعروضة بالمتجر</h2>
+          <p>يمكنك استعراض جميع المنتجات (الافتراضية والمضافة يدوياً). كما يمكنك حذف المنتجات المضافة يدوياً.</p>
+        </div>
+
+        <div class="table-responsive">
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th>الصورة</th>
+                <th>الاسم</th>
+                <th>الفئة / الوصف</th>
+                <th>السعر</th>
+                <th>العلامة</th>
+                <th>التقييم</th>
+                <th>المقاسات المتاحة</th>
+                <th>المصدر</th>
+                <th>التحكم</th>
+              </tr>
+            </thead>
+            <tbody id="admin-products-list">
+              <!-- Injected by JS -->
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+    </main>
+  </div>
+

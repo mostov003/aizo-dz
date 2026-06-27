@@ -1,0 +1,13 @@
+// ═══════════════════════════════════════════
+// PRODUCT DATA — aizo.dz
+// ═══════════════════════════════════════════
+export const DEFAULT_PRODUCTS = [
+  { id: 1, name: "Denim Jeans", sub: "Edo collection", price: 8400, badge: "New", badgeType: "new", stars: 5, reviews: 28, img: "https://i.pinimg.com/736x/5b/0e/55/5b0e55765d14b77877e75fca2315ae6f.jpg", alt: "Edo collection Denim Jeans", sizes: ["S","M","L","XL"], colors: ["أسود","أزرق"], category: "Jeans" },
+  { id: 2, name: "Tsuru Denim", sub: "Edo collection", price: 18500, badge: null, stars: 5, reviews: 14, img: "https://pbs.twimg.com/media/HFOcFnRaEAEGqVB?format=jpg&name=large", alt: "Edo collection Tsuru Denim", sizes: ["S","M","L","XL"], colors: ["أسود","أزرق"], category: "Jeans" },
+  { id: 3, name: "Solace Denim", sub: "Edo collection", price: 34900, badge: "Limited", badgeType: "limited", stars: 4, reviews: 9, img: "https://i.pinimg.com/736x/f4/d4/85/f4d485c8288184f455a9be415a7a775d.jpg", alt: "Edo collection Solace Denim", sizes: ["S","M","L","XL"], colors: ["أسود","أبيض"], category: "Jeans" },
+  { id: 4, name: "Black Vescartes Ronin Jacket", sub: "Vescartes", price: 12200, badge: null, stars: 5, reviews: 41, img: "https://i.pinimg.com/736x/fa/14/b3/fa14b392e687ec62d0bbe320e81ca10d.jpg", alt: "Black Vescartes Ronin Jacket", sizes: ["M","L","XL"], colors: ["أسود"], category: "Jackets" },
+  { id: 5, name: "Stüssy Dragon Sherpa Jacket", sub: "The Stüssy Fall/Winter 2022 collection", price: 18900, badge: "New", badgeType: "new", stars: 5, reviews: 17, img: "https://i.pinimg.com/736x/fa/b3/77/fab3779ed69b193b27fa90960c949975.jpg", alt: "Stüssy Dragon Sherpa Jacket", sizes: ["S","M","L"], colors: ["أسود","أبيض"], category: "Jackets" },
+  { id: 6, name: "Vescartes Oni Hoodie", sub: "Vescartes", price: 14500, badge: null, stars: 4, reviews: 22, img: "https://i.pinimg.com/736x/2b/5d/60/2b5d60ac344515aada335e3ce17938aa.jpg", alt: "Vescartes Oni Hoodie", sizes: ["S","M","L","XL"], colors: ["أسود","أبيض"], category: "Hoodies" },
+  { id: 7, name: "Lily & Fang Denim", sub: "Vescartes", price: 21100, badge: "Sale", badgeType: "sale", stars: 5, reviews: 36, img: "https://i.pinimg.com/736x/4d/80/66/4d8066053a67773110d4ef407a7094da.jpg", alt: "Lily & Fang Denim", sizes: ["S","M","L","XL"], colors: ["أسود","أزرق"], category: "Jeans" },
+  { id: 8, name: "Ryu Denim Jacket", sub: "Edo Collection", price: 11600, badge: null, stars: 5, reviews: 53, img: "https://i.pinimg.com/736x/a2/ed/57/a2ed57555ddebae7c8f69fbcb20011e8.jpg", alt: "Ryu Denim Jacket", sizes: ["M","L","XL","XXL"], colors: ["أزرق","أسود"], category: "Jackets" }
+]

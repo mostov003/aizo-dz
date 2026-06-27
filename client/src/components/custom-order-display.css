@@ -1,0 +1,32 @@
+.co-display-wrapper{color:#222}
+.co-main-layout{display:flex;gap:20px;align-items:flex-start}
+.co-canvas-column{flex:1 1 60%;min-width:320px}
+.co-sides-column{flex:0 0 380px;max-height:640px;overflow-y:auto}
+.co-canvas-box{border:1px solid #e6e9ee;border-radius:8px;padding:12px;background:#fff}
+.co-canvas-inner{width:100%;height:520px;position:relative;background:#fff;display:flex;justify-content:center;align-items:center}
+.co-model-viewer{width:100%;height:100%;min-height:320px}
+.co-garment-base{max-width:100%;max-height:100%;object-fit:contain}
+.co-design-overlay{position:absolute;top:0;left:0;pointer-events:none;box-shadow:0 8px 24px rgba(0,0,0,0.16);border-radius:8px}
+.co-placement-highlight{position:absolute;border:2px dashed rgba(46, 204, 113, 0.9);border-radius:12px;pointer-events:none;mix-blend-mode:color-burn;}
+.co-side-viewport img{max-width:none}
+
+.co-thumbs-column{width:96px;display:flex;flex-direction:column;gap:10px}
+.co-thumb{width:84px;height:84px;border:1px solid #e6e9ee;border-radius:12px;display:flex;align-items:center;justify-content:center;cursor:pointer;overflow:hidden;background:#fff;position:relative;box-shadow:0 2px 8px rgba(0,0,0,0.06)}
+.co-thumb--active{outline:3px solid #2ecc71;transform:scale(1.03)}
+.co-thumb img{max-width:100%;max-height:100%}
+.co-thumb-index{position:absolute;top:6px;left:6px;width:22px;height:22px;border-radius:50%;background:rgba(34,34,34,0.9);color:#fff;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;z-index:2}
+
+.canvas-nav-btn{position:absolute;top:50%;transform:translateY(-50%);width:44px;height:44px;border-radius:50%;background:rgba(0,0,0,0.45);color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer}
+.canvas-nav-btn--left{left:8px}
+.canvas-nav-btn--right{right:8px}
+
+@media (max-width:900px){
+  .co-main-layout{flex-direction:column}
+  .co-sides-column{flex:1 1 auto;max-height:none;width:100%}
+  .co-canvas-column{width:100%}
+  .co-canvas-inner{height:420px}
+}
+
+@media (max-width:480px){
+  .co-canvas-inner{height:320px}
+}

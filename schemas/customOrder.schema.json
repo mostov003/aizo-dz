@@ -1,0 +1,162 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Custom Order with Multiple Printing Sides",
+  "type": "object",
+  "properties": {
+    "orderId": {
+      "type": "string",
+      "description": "Unique order identifier",
+      "example": "CO-2024-001"
+    },
+    "productType": {
+      "type": "string",
+      "enum": ["tshirt", "hoodie", "polo", "cap", "bob", "jogging", "short"],
+      "description": "Type of garment being customized"
+    },
+    "color": {
+      "type": "string",
+      "description": "Color of the garment",
+      "example": "black"
+    },
+    "designs": {
+      "type": "array",
+      "description": "Array of separate designs for different sides",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "properties": {
+          "sideId": {
+            "type": "string",
+            "enum": ["front", "back", "left_sleeve", "right_sleeve", "pocket"],
+            "description": "Identifier for the printing side"
+          },
+          "sideName": {
+            "type": "string",
+            "description": "Human-readable name of the side",
+            "example": "Poitrine / Front Chest"
+          },
+          "imagePath": {
+            "type": "string",
+            "description": "URL or file path to the design image",
+            "example": "/uploads/designs/CO-2024-001_front.png"
+          },
+          "imageData": {
+            "type": "object",
+            "properties": {
+              "width": {
+                "type": "number",
+                "description": "Image width in pixels"
+              },
+              "height": {
+                "type": "number",
+                "description": "Image height in pixels"
+              },
+              "format": {
+                "type": "string",
+                "enum": ["png", "jpeg", "webp"],
+                "description": "Image format"
+              },
+              "fileSize": {
+                "type": "number",
+                "description": "File size in bytes"
+              }
+            }
+          },
+          "placement": {
+            "type": "object",
+            "description": "Position and scale of design on the garment",
+            "properties": {
+              "x": {
+                "type": "number",
+                "description": "X coordinate (percentage or pixels)",
+                "example": 264
+              },
+              "y": {
+                "type": "number",
+                "description": "Y coordinate (percentage or pixels)",
+                "example": 236
+              },
+              "scale": {
+                "type": "number",
+                "description": "Scale factor (0.1 - 2.0)",
+                "minimum": 0.1,
+                "maximum": 2.0,
+                "example": 1.0
+              },
+              "rotation": {
+                "type": "number",
+                "description": "Rotation angle in degrees",
+                "example": 0
+              }
+            },
+            "required": ["x", "y", "scale"]
+          },
+          "colors": {
+            "type": "object",
+            "description": "Color customization if applicable",
+            "properties": {
+              "primaryColor": {
+                "type": "string",
+                "pattern": "^#[0-9A-Fa-f]{6}$",
+                "example": "#FF5733"
+              },
+              "secondaryColor": {
+                "type": "string",
+                "pattern": "^#[0-9A-Fa-f]{6}$",
+                "example": "#33FF57"
+              }
+            }
+          },
+          "uploadedAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Timestamp when design was uploaded"
+          },
+          "status": {
+            "type": "string",
+            "enum": ["pending", "approved", "rejected"],
+            "default": "pending",
+            "description": "Status of the design"
+          }
+        },
+        "required": ["sideId", "sideName", "imagePath", "placement"]
+      }
+    },
+    "quantity": {
+      "type": "number",
+      "minimum": 1,
+      "description": "Number of items to produce"
+    },
+    "customerInfo": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "email": {
+          "type": "string",
+          "format": "email"
+        },
+        "phone": {
+          "type": "string"
+        },
+        "wilaya": {
+          "type": "string"
+        }
+      }
+    },
+    "notes": {
+      "type": "string",
+      "description": "Additional notes or special instructions"
+    },
+    "createdAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "updatedAt": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "required": ["orderId", "productType", "color", "designs", "quantity"]
+}

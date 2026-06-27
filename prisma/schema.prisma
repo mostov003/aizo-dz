@@ -1,0 +1,148 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ════════════════════════════════════════════
+// ORDER MODEL
+// ════════════════════════════════════════════
+model Order {
+  id                String    @id @default(cuid())
+  orderNumber       String    @unique // AZ-XXXX
+  
+  // Customer Info
+  customerName      String
+  customerPhone     String
+  customerEmail     String?
+  customerWilaya    String
+  customerAddress   String?
+  delivery          String    @default("Home") // "Home" or "Office"
+  deliveryOffice    String?
+  
+  // Order Details
+  items             OrderItem[]
+  subtotal          Float
+  shippingCost      Float     @default(0)
+  total             Float
+  
+  // Status
+  status            String    @default("en attente") // en attente, confirmé, livré, retourné, annulé
+  notes             String?
+  
+  // Custom Order Flag
+  customOrder       Boolean   @default(false)
+  customLayers      CustomLayer[]
+  customOrderDetails Json?
+  
+  // Tracking & Shipping
+  trackingNumber    String?
+  zrParcelId        String?
+  zrStatus          Json?     // Store as JSON: { state, situation }
+  
+  // Timestamps
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  shippedAt         DateTime?
+  lastSyncedAt      DateTime?
+  
+  @@index([customerPhone])
+  @@index([status])
+  @@index([customOrder])
+}
+
+// ════════════════════════════════════════════
+// ORDER ITEM MODEL
+// ════════════════════════════════════════════
+model OrderItem {
+  id                String    @id @default(cuid())
+  orderId           String
+  order             Order     @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  
+  productId         Int
+  productName       String
+  color             String?
+  size              String?
+  quantity          Int
+  price             Float
+  
+  @@index([orderId])
+}
+
+// ════════════════════════════════════════════
+// CUSTOM LAYER MODEL (for custom orders)
+// ════════════════════════════════════════════
+model CustomLayer {
+  id                String    @id @default(cuid())
+  orderId           String
+  order             Order     @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  
+  layerIndex        Int
+  imageUrl          String
+  area              String?   // Center, Front, Back, etc.
+  text              String?
+  
+  @@index([orderId])
+}
+
+// ════════════════════════════════════════════
+// LEAD MODEL (Email List)
+// ════════════════════════════════════════════
+model Lead {
+  id                String    @id @default(cuid())
+  email             String    @unique
+  name              String?
+  message           String?
+  
+  createdAt         DateTime  @default(now())
+}
+
+// ════════════════════════════════════════════
+// PRODUCT MODEL
+// ════════════════════════════════════════════
+model Product {
+  id                String    @id @default(cuid())
+  productId         Int       @unique
+  name              String
+  price             Float
+  description       String?
+  image             String?
+  
+  // Sizing & Stock
+  sizes             String[]  @default([])
+  colors            String[]  @default([])
+  customizable      Boolean   @default(false)
+  
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+}
+
+// ════════════════════════════════════════════
+// PRODUCT STOCK MODEL
+// ════════════════════════════════════════════
+model ProductStock {
+  id                String    @id @default(cuid())
+  productId         Int
+  size              String
+  color             String
+  quantity          Int
+  
+  @@unique([productId, size, color])
+}
+
+// ════════════════════════════════════════════
+// SETTING MODEL
+// ════════════════════════════════════════════
+model Setting {
+  id                String    @id @default(cuid())
+  key               String    @unique
+  value             Json
+  
+  updatedAt         DateTime  @updatedAt
+}
+

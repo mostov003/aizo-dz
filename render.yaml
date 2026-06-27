@@ -1,0 +1,23 @@
+services:
+  - type: web
+    name: aizo-dz-backend
+    env: node
+    plan: free
+    buildCommand: npm install && npm run build
+    startCommand: node server.js
+    envVars:
+      - key: PORT
+        value: 3000
+      - key: NODE_ENV
+        value: production
+      - key: ALLOWED_ORIGINS
+        sync: false
+        placeholder: "https://your-store.netlify.app,https://your-custom-domain.com"
+      - key: ZR_SECRET_KEY
+        sync: false
+        placeholder: "Your ZR Express API Secret Key"
+      - key: ZR_TENANT_ID
+        sync: false
+        placeholder: "Your ZR Express Tenant ID"
+      - key: ZR_BASE_URL
+        value: "https://api.zrexpress.app/api/v1"

@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>The Collection — AIZO.DZ</title>
+  <meta name="description" content="Browse our complete collection of premium, minimalist apparel curated for intentional living." />
+  
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet" />
+
+  <!-- Stylesheet -->
+  <link rel="stylesheet" href="css/style.css" />
+  
+  <style>
+    /* Specific styles for Collections Page matching Vescartes */
+    .collections-hero {
+      padding: 9rem 1.5rem 4rem;
+      background: #fafaf9;
+      text-align: center;
+      border-bottom: 1px solid var(--color-border);
+    }
+    .collections-hero h1 {
+      font-family: var(--font-serif);
+      font-size: clamp(2.5rem, 5vw, 4rem);
+      font-weight: 300;
+      color: var(--color-stone-900);
+      margin-bottom: 1rem;
+    }
+    .collections-hero p {
+      font-size: 0.875rem;
+      color: var(--color-stone-500);
+      letter-spacing: 0.05em;
+      max-width: 480px;
+      margin: 0 auto;
+    }
+    .collections-layout {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 3rem 1.5rem 6rem;
+    }
+    .collections-toolbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 3rem;
+      border-bottom: 1px solid var(--color-border);
+      padding-bottom: 1.5rem;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+    .collections-count {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--color-stone-500);
+    }
+    /* Hide ratings on collections page to match Vescartes */
+    .product-card__rating {
+      display: none !important;
+    }
+    @media (max-width: 768px) {
+      .collections-hero {
+        padding: 7rem 1.25rem 3rem;
+      }
+      .collections-hero h1 {
+        font-size: clamp(1.75rem, 6vw, 2.5rem);
+      }
+      .collections-layout {
+        padding: 2rem 1rem 4rem;
+      }
+      .collections-toolbar {
+        margin-bottom: 2rem;
+        padding-bottom: 1rem;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.75rem;
+      }
+    }
+    @media (max-width: 480px) {
+      .collections-hero {
+        padding: 6rem 1rem 2.5rem;
+      }
+      .collections-hero h1 {
+        font-size: clamp(1.5rem, 7vw, 2rem);
+        margin-bottom: 0.75rem;
+      }
+      .collections-hero p {
+        font-size: 0.8rem;
+        max-width: 100%;
+      }
+      .collections-layout {
+        padding: 1.5rem 0.875rem 3rem;
+      }
+      .collections-toolbar {
+        margin-bottom: 1.5rem;
+      }
+      .collections-count {
+        font-size: 0.675rem;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<!-- Announcement Bar -->
+<div class="announcement-bar">
+  LIVRAISON RAPIDE & PAIEMENT À LA LIVRAISON | توصيل سريع والدفع عند الاستلام
+</div>
+
+<!-- ════════════════════════════════════════════
+     NAVBAR
+     ════════════════════════════════════════════ -->
+<header class="navbar scrolled" id="navbar" role="banner">
+  <div class="navbar__inner">
+    <!-- Desktop navigation -->
+    <nav aria-label="Main navigation">
+      <ul class="nav-links">
+        <li><a href="/#collection" class="nav-link" data-i18n="nav_new_arrivals">New Arrivals</a></li>
+        <li><a href="/collections" class="nav-link" style="color: var(--color-stone-900); font-weight: 500;" data-i18n="nav_collection">The Collection</a></li>
+        <li><a href="/customize" class="nav-link" data-i18n="pd_custom_order">Custom Order</a></li>
+        <li><a href="/#about" class="nav-link" data-i18n="nav_about">About Us</a></li>
+        <li><a href="/collections" class="btn-nav" id="shop-now-btn" data-i18n="nav_shop_now">Shop Now</a></li>
+      </ul>
+    </nav>
+
+    <!-- Actions (Cart & Hamburger) -->
+    <div class="navbar__actions">
+      <!-- Floating language button (moved beside cart) -->
+      <button class="lang-btn lang-btn-floating" aria-label="Change Language">
+        <span id="current-lang-label">🇫🇷</span>
+      </button>
+      <button class="cart-trigger" id="cart-trigger" aria-label="Open Cart">
+        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" width="20" height="20">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 10.5V6a3.75 3.75 0 1,0-7.5 0v4.5m11.356-1.993 1.263 12c.07.665-.45 1.243-1.119 1.243H4.25a1.125 1.125 0 0,1-1.12-1.243l1.264-12A1.125 1.125 0 0,1 5.513 7.5h12.974c.576 0 1.059.435 1.119 1.007ZM8.625 10.5a.375.375 0 1,1-.75 0 .375.375 0 0,1 .75 0Zm7.5 0a.375.375 0 1,1-.75 0 .375.375 0 0,1 .75 0Z" />
+        </svg>
+        <span class="cart-count" id="cart-count">0</span>
+      </button>
+
+      <button class="hamburger" id="hamburger" aria-label="Toggle navigation menu" aria-expanded="false" aria-controls="side-drawer">
+        <span class="hamburger__bar"></span>
+        <span class="hamburger__bar"></span>
+        <span class="hamburger__bar"></span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Mobile menu -->
+  <nav class="mobile-menu" id="mobile-menu" aria-label="Mobile navigation">
+    <ul>
+      <li><a href="/#collection" class="nav-link" data-i18n="nav_new_arrivals">New Arrivals</a></li>
+      <li><a href="/collections" class="nav-link" data-i18n="nav_collection">The Collection</a></li>
+      <li><a href="/customize" class="nav-link" data-i18n="pd_custom_order">Custom Order</a></li>
+      <li><a href="/#about" class="nav-link" data-i18n="nav_about">About Us</a></li>
+      <li><a href="/collections" class="btn-nav" style="align-self:flex-start" data-i18n="nav_shop_now">Shop Now</a></li>
+    </ul>
+  </nav>
+</header>
+
+<!-- SIDE DRAWER BACKDROP -->
+<div class="side-drawer-backdrop" id="side-drawer-backdrop" aria-hidden="true"></div>
+
+<!-- SIDE DRAWER -->
+<aside class="side-drawer" id="side-drawer" role="dialog" aria-modal="true" aria-label="Navigation menu">
+  <div class="side-drawer__header">
+    <button class="side-drawer__close" id="side-drawer-close" aria-label="Close navigation menu">&times;</button>
+  </div>
+  <div class="side-drawer__body">
+    <ul>
+      <li><a href="/#collection" class="nav-link" data-i18n="nav_new_arrivals">New Arrivals</a></li>
+      <li><a href="/collections" class="nav-link" data-i18n="nav_collection">The Collection</a></li>
+      <li><a href="/customize" class="nav-link" data-i18n="pd_custom_order">Custom Order</a></li>
+      <li><a href="/#about" class="nav-link" data-i18n="nav_about">About Us</a></li>
+    </ul>
+    <a href="/collections" class="btn-nav" data-i18n="nav_shop_now">Shop Now</a>
+  </div>
+  <div class="side-drawer__footer">
+    <button class="side-drawer__lang-btn" id="side-drawer-lang-btn" aria-label="Choose language">
+      <span class="side-drawer__lang-current" id="side-drawer-lang-current">🇫🇷</span>
+      <span class="side-drawer__lang-arrow">▼</span>
+    </button>
+  </div>
+</aside>
+
+<!-- ════════════════════════════════════════════
+     HERO SECTION
+     ════════════════════════════════════════════ -->
+<section class="collections-hero">
+  <h1>The Collection</h1>
+  <p>Minimalist essentials designed with precision and intention.</p>
+</section>
+
+<!-- ════════════════════════════════════════════
+     COLLECTIONS GRID LAYOUT
+     ════════════════════════════════════════════ -->
+<div class="collections-container">
+  
+  <!-- Sidebar Filters -->
+  <aside class="collections-sidebar">
+    
+    <!-- Live Search -->
+    <div class="filter-group">
+      <label class="filter-group__title" for="search-input">Search Products</label>
+      <input type="text" id="search-input" class="filter-search-input" placeholder="Type to search..." />
+    </div>
+
+    <!-- Categories -->
+    <div class="filter-group">
+      <span class="filter-group__title">Categories</span>
+      <button class="sidebar-category-btn category-btn category-btn--active" data-category="all">All Products</button>
+      <button class="sidebar-category-btn category-btn" data-category="jeans">Denim / Jeans</button>
+      <button class="sidebar-category-btn category-btn" data-category="jackets">Jackets</button>
+      <button class="sidebar-category-btn category-btn" data-category="hoodies">Hoodies</button>
+    </div>
+
+    <!-- Sorting -->
+    <div class="filter-group">
+      <label class="filter-group__title" for="sort-select">Sort By</label>
+      <select id="sort-select" class="filter-select">
+        <option value="featured">Featured</option>
+        <option value="price-asc">Price: Low to High</option>
+        <option value="price-desc">Price: High to Low</option>
+        <option value="name-asc">Alphabetically: A-Z</option>
+        <option value="name-desc">Alphabetically: Z-A</option>
+      </select>
+    </div>
+
+  </aside>
+
+  <!-- Main Grid Column -->
+  <main class="collections-main">
+    <div class="collections-info-bar">
+      <span>Showing <span id="active-products-count">0</span> products</span>
+      <span>Curated Streetwear</span>
+    </div>
+
+    <!-- Grid of Products -->
+    <div class="product-grid" id="product-grid" role="list" aria-label="Products">
+      <!-- Loaded dynamically by products.js / main.js -->
+    </div>
+  </main>
+
+</div>
+
+<!-- ════════════════════════════════════════════
+     FOOTER
+     ════════════════════════════════════════════ -->
+<footer class="footer" id="contact" role="contentinfo">
+  <div class="footer__inner">
+    <div class="footer__grid">
+      <!-- Brand column -->
+      <div class="footer-col">
+        <p class="footer-tagline">
+          Curated essentials for a more intentional life.<br/>Proudly Algerian.
+        </p>
+      </div>
+
+      <!-- Shop links -->
+      <div class="footer-col">
+        <h4 data-i18n="foot_shop">Shop</h4>
+        <ul>
+          <li><a href="/#collection" data-i18n="foot_new_arrivals">New Arrivals</a></li>
+          <li><a href="/collections" data-i18n="foot_collection">The Collection</a></li>
+          <li><a href="/#about" data-i18n="foot_our_story">Our Story</a></li>
+        </ul>
+      </div>
+
+      <!-- Contact -->
+      <div class="footer-col">
+        <h4 data-i18n="foot_contact">Contact</h4>
+        <ul>
+          <li class="contact-item">
+            <a href="mailto:contact@aizo.dz">contact@aizo.dz</a>
+          </li>
+          <li class="contact-item">
+            <span>Algiers, Algeria</span>
+          </li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- Bottom bar -->
+    <div class="footer__bottom">
+      <p class="footer__copy" data-i18n="foot_copy">© 2026 AIZO.DZ — All rights reserved.</p>
+      <p class="footer__made" data-i18n="foot_made">Made with intention · Algeria</p>
+    </div>
+  </div>
+</footer>
+
+<!-- ════════════════════════════════════════════
+     CART DRAWER
+     ════════════════════════════════════════════ -->
+<div class="cart-drawer-backdrop" id="cart-drawer-backdrop" aria-hidden="true"></div>
+<aside class="cart-drawer" id="cart-drawer" role="dialog" aria-modal="true" aria-labelledby="cart-drawer-title">
+  <div class="cart-drawer__header">
+    <h2 id="cart-drawer-title">سلة المشتريات <span>/ Cart</span></h2>
+    <button class="btn-close-cart" id="btn-close-cart" aria-label="Close cart">×</button>
+  </div>
+
+  <div class="cart-drawer__body">
+    <!-- Empty State -->
+    <div class="cart-empty" id="cart-empty">
+      <div class="cart-empty__icon">✦</div>
+      <p class="cart-empty__text-ar">السلة فارغة حالياً</p>
+      <p class="cart-empty__text-en">Your cart is empty</p>
+      <a href="/collections" class="btn-primary" id="btn-empty-shop">تسوق الآن / Shop Now</a>
+    </div>
+
+    <!-- Cart Items list -->
+    <div class="cart-items" id="cart-items-list">
+      <!-- Injected by JS -->
+    </div>
+
+    <!-- Summary & Checkout Form -->
+    <div class="cart-checkout-section" id="cart-checkout-section" style="display: none;">
+      <div class="cart-summary">
+        <div class="summary-row">
+          <span>المجموع الفرعي / Subtotal</span>
+          <span id="cart-subtotal">0 DZD</span>
+        </div>
+        <div class="summary-row">
+          <span>شحن التوصيل / Shipping</span>
+          <span id="cart-shipping">-- DZD</span>
+        </div>
+        <div class="summary-row summary-total">
+          <span>الإجمالي / Total</span>
+          <span id="cart-total">0 DZD</span>
+        </div>
+      </div>
+
+      <form class="checkout-form" id="checkout-form" autocomplete="on">
+        <h3>معلومات التوصيل <span>/ Delivery Info</span></h3>
+
+        <div class="form-group-row" style="display: flex; gap: 0.75rem;">
+          <div class="form-group" style="flex: 1;">
+            <label for="checkout-name">الاسم / First Name *</label>
+            <input type="text" id="checkout-name" placeholder="الاسم الشخصي" required />
+            <span class="error-msg" id="err-name">يرجى إدخال الاسم</span>
+          </div>
+          <div class="form-group" style="flex: 1;">
+            <label for="checkout-surname">اللقب / Last Name *</label>
+            <input type="text" id="checkout-surname" placeholder="اللقب العائلي" required />
+            <span class="error-msg" id="err-surname">يرجى إدخال اللقب</span>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="checkout-phone">رقم الهاتف / Phone Number *</label>
+          <input type="tel" id="checkout-phone" placeholder="05 / 06 / 07 XX XX XX XX" required />
+          <span class="error-msg" id="err-phone">يرجى إدخال رقم هاتف صحيح (10 أرقام)</span>
+        </div>
+
+        <div class="form-group">
+          <label for="checkout-wilaya">الولاية / State *</label>
+          <select id="checkout-wilaya" required>
+            <option value="" disabled selected>اختر الولاية...</option>
+            <option value="1 - أدرار (Adrar)">1 - أدرار (Adrar)</option>
+            <option value="2 - الشلف (Chlef)">2 - الشلف (Chlef)</option>
+            <option value="3 - الأغواط (Laghouat)">3 - الأغواط (Laghouat)</option>
+            <option value="4 - أم البواقي (Oum El Bouaghi)">4 - أم البواقي (Oum El Bouaghi)</option>
+            <option value="5 - باتنة (Batna)">5 - باتنة (Batna)</option>
+            <option value="6 - بجاية (Béjaïa)">6 - بجاية (Béjaïa)</option>
+            <option value="7 - بسكرة (Biskra)">7 - بسكرة (Biskra)</option>
+            <option value="8 - بشار (Béchar)">8 - بشار (Béchar)</option>
+            <option value="9 - البليدة (Blida)">9 - البليدة (Blida)</option>
+            <option value="10 - البويرة (Bouira)">10 - البويرة (Bouira)</option>
+            <option value="11 - تمنراست (Tamanrasset)">11 - تمنراست (Tamanrasset)</option>
+            <option value="12 - تبسة (Tébessa)">12 - تبسة (Tébessa)</option>
+            <option value="13 - تلمسان (Tlemcen)">13 - تلمسان (Tlemcen)</option>
+            <option value="14 - تيارت (Tiaret)">14 - تيارت (Tiaret)</option>
+            <option value="15 - تيزي وزو (Tizi Ouzou)">15 - تيزي وزو (Tizi Ouzou)</option>
+            <option value="16 - الجزائر (Algiers)">16 - الجزائر (Algiers)</option>
+            <option value="17 - الجلفة (Djelfa)">17 - الجلفة (Djelfa)</option>
+            <option value="18 - جيجل (Jijel)">18 - جيجل (Jijel)</option>
+            <option value="19 - سطيف (Sétif)">19 - سطيف (Sétif)</option>
+            <option value="20 - سعيدة (Saïda)">20 - سعيدة (Saïda)</option>
+            <option value="21 - سكيكدة (Skikda)">21 - سكيكدة (Skikda)</option>
+            <option value="22 - سيدي بلعباس (Sidi Bel Abbès)">22 - سيدي بلعباس (Sidi Bel Abbès)</option>
+            <option value="23 - عنابة (Annaba)">23 - عنابة (Annaba)</option>
+            <option value="24 - قالمة (Guelma)">24 - قالمة (Guelma)</option>
+            <option value="25 - قسنطينة (Constantine)">25 - قسنطينة (Constantine)</option>
+            <option value="26 - المدية (Médéa)">26 - المدية (Médéa)</option>
+            <option value="27 - مستغانم (Mostaganem)">27 - مستغانم (Mostaganem)</option>
+            <option value="28 - المسيلة (M'Sila)">28 - المسيلة (M'Sila)</option>
+            <option value="29 - معسكر (Mascara)">29 - معسكر (Mascara)</option>
+            <option value="30 - ورقلة (Ouargla)">30 - ورقلة (Ouargla)</option>
+            <option value="31 - وهران (Oran)">31 - وهران (Oran)</option>
+            <option value="32 - البيض (El Bayadh)">32 - البيض (El Bayadh)</option>
+            <option value="33 - إليزي (Illizi)">33 - إليزي (Illizi)</option>
+            <option value="34 - برج بوعريريج (Bordj Bou Arréridj)">34 - برج بوعريريج (Bordj Bou Arréridj)</option>
+            <option value="35 - بومرداس (Boumerdès)">35 - بومرداس (Boumerdès)</option>
+            <option value="36 - الطارف (El Tarf)">36 - الطارف (El Tarf)</option>
+            <option value="37 - تندوف (Tindouf)">37 - تندوف (Tindouf)</option>
+            <option value="38 - تسمسيلت (Tissemsilt)">38 - تسمسيلت (Tissemsilt)</option>
+            <option value="39 - الوادي (El Oued)">39 - الوادي (El Oued)</option>
+            <option value="40 - خنشلة (Khenchela)">40 - خنشلة (Khenchela)</option>
+            <option value="41 - سوق أهراس (Souk Ahras)">41 - سوق أهراس (Souk Ahras)</option>
+            <option value="42 - تيبازة (Tipaza)">42 - تيبازة (Tipaza)</option>
+            <option value="43 - ميلة (Mila)">43 - ميلة (Mila)</option>
+            <option value="44 - عين الدفلة (Aïn Defla)">44 - عين الدفلة (Aïn Defla)</option>
+            <option value="45 - النعامة (Naâma)">45 - النعامة (Naâma)</option>
+            <option value="46 - عين تموشنت (Aïn Témouchent)">46 - عين تموشنت (Aïn Témouchent)</option>
+            <option value="47 - غرداية (Ghardaïa)">47 - غرداية (Ghardaïa)</option>
+            <option value="48 - غليزان (Relizane)">48 - غليزان (Relizane)</option>
+            <option value="49 - المغير (El M'Ghair)">49 - المغير (El M'Ghair)</option>
+            <option value="50 - المنيعة (El Meniaa)">50 - المنيعة (El Meniaa)</option>
+            <option value="51 - أولاد جلال (Ouled Djellal)">51 - أولاد جلال (Ouled Djellal)</option>
+            <option value="52 - برج باجي مختار (Bordj Baji Mokhtar)">52 - برج باجي مختار (Bordj Baji Mokhtar)</option>
+            <option value="53 - بني عباس (Béni Abbès)">53 - بني عباس (Béni Abbès)</option>
+            <option value="54 - عين صالح (In Salah)">54 - عين صالح (In Salah)</option>
+            <option value="55 - عين قزام (In Guezzam)">55 - عين قزام (In Guezzam)</option>
+            <option value="56 - تقرت (Touggourt)">56 - تقرت (Touggourt)</option>
+            <option value="57 - جانت (Djanet)">57 - جانت (Djanet)</option>
+            <option value="58 - المغير (El M'Ghair)">58 - المغير (El M'Ghair)</option>
+          </select>
+          <span class="error-msg" id="err-wilaya">يرجى اختيار الولاية</span>
+        </div>
+
+        <div class="form-group">
+          <label>نوع التوصيل / Delivery Type *</label>
+          <div class="delivery-options">
+            <label class="delivery-option-card">
+              <input type="radio" name="delivery-type" value="home" checked />
+              <div class="option-content">
+                <span class="option-title" data-i18n="delivery_home">التوصيل إلى المنزل (A DOMICILE)</span>
+                <span class="option-desc"><span data-i18n="delivery_home_desc">الدفع عند الاستلام بباب المنزل</span> · <strong id="home-delivery-price"></strong></span>
+              </div>
+            </label>
+            <label class="delivery-option-card">
+              <input type="radio" name="delivery-type" value="office" />
+              <div class="option-content">
+                <span class="option-title" data-i18n="delivery_office">التوصيل إلى المكتب (STOP DESK)</span>
+                <span class="option-desc"><span data-i18n="delivery_office_desc">الاستلام من مكتب شركة التوصيل</span> · <strong id="office-delivery-price"></strong></span>
+              </div>
+            </label>
+          </div>
+        </div>
+
+        <div class="form-group" id="home-address-group">
+          <label for="checkout-address">العنوان التفصيلي / Home Address *</label>
+          <div class="input-with-icon" style="position: relative; display: flex; align-items: center;">
+            <span class="input-icon" style="position: absolute; right: 10px; top: 12px; color: var(--color-stone-400); pointer-events: none;">
+              <svg fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" style="width: 18px; height: 18px;">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12l8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25" />
+              </svg>
+            </span>
+            <textarea
+              id="checkout-address"
+              placeholder="مثال: حي السلام، شارع الأمير، رقم 12، الطابق الثاني"
+              rows="3"
+              style="padding-right: 2.25rem;"
+              required
+            ></textarea>
+          </div>
+          <span class="error-msg" id="err-address">يرجى إدخال عنوان المنزل</span>
+        </div>
+
+        <div class="form-group" id="office-select-group" style="display: none;">
+          <label for="checkout-office">مكتب التوصيل / Shipping Office *</label>
+          <div class="input-with-icon" style="position: relative; display: flex; align-items: center;">
+            <span class="input-icon" style="position: absolute; right: 10px; top: 12px; color: var(--color-stone-400); pointer-events: none;">
+              <svg fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" style="width: 18px; height: 18px;">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 21v-8.25M15.75 21v-8.25M8.25 21v-8.25M3 9l9-6 9 6m-1.5 12V10.332A48.36 48.36 0 0012 9.75c-2.551 0-5.053.244-7.5 1.724V21a1.5 1.5 0 001.5 1.5h15a1.5 1.5 0 001.5-1.5z" />
+              </svg>
+            </span>
+            <select id="checkout-office" style="padding-right: 2.25rem;">
+              <option value="" disabled selected>اختر مكتب التوصيل...</option>
+            </select>
+          </div>
+          <span class="error-msg" id="err-office">يرجى اختيار مكتب التوصيل</span>
+        </div>
+
+        <button type="submit" class="btn-primary btn-checkout" id="btn-confirm-order">تأكيد الطلب / Confirm Order</button>
+        <div class="error-alert" id="checkout-error-alert" style="display: none;">
+          <span class="error-icon">⚠️</span>
+          <div class="error-content">
+            <p id="checkout-error-text">حدث خطأ أثناء معالجة الطلب</p>
+          </div>
+          <button type="button" class="error-close" id="checkout-error-close">×</button>
+        </div>
+      </form>
+    </div>
+
+    <!-- Success Screen -->
+    <div class="order-success-screen" id="order-success-screen" style="display: none;">
+      <div class="success-icon">✓</div>
+      <h2>تم تسجيل طلبك بنجاح!</h2>
+      <p class="success-subtitle">شكراً لثقتكم. سنقوم بالاتصال بكم هاتفياً قريباً لتأكيد الطلب وشحنه.</p>
+      
+      <div class="order-details-card">
+        <div class="details-row">
+          <span>رقم الطلب:</span>
+          <strong id="success-order-id">#00000</strong>
+        </div>
+        <div class="details-row">
+          <span>الاسم:</span>
+          <span id="success-order-name">-</span>
+        </div>
+        <div class="details-row">
+          <span>الهاتف:</span>
+          <span id="success-order-phone">-</span>
+        </div>
+        <div class="details-row">
+          <span>الولاية:</span>
+          <span id="success-order-wilaya">-</span>
+        </div>
+        <div class="details-row">
+          <span>التوصيل إلى:</span>
+          <span id="success-order-delivery">-</span>
+        </div>
+        <div class="details-row total-row">
+          <span>المجموع الإجمالي:</span>
+          <strong id="success-order-total">0 DZD</strong>
+        </div>
+      </div>
+
+      <button class="btn-primary" id="btn-success-close">متابعة التسوق / Continue Shopping</button>
+    </div>
+  </div>
+</aside>
+
+<!-- Scripts -->
+<script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+<script src="js/config.js"></script>
+<script src="js/products.js"></script>
+<script src="js/i18n.js"></script>
+<script src="js/sync.js"></script>
+<script src="js/main.js"></script>
+
+<script>
+  // Dynamic product counter update on load and filter changes
+  document.addEventListener('DOMContentLoaded', () => {
+    const counterEl = document.getElementById('active-products-count');
+    
+    function updateCount() {
+      setTimeout(() => {
+        const visibleCards = document.querySelectorAll('#product-grid .product-card');
+        if (counterEl) counterEl.textContent = visibleCards.length;
+      }, 350);
+    }
+    
+    // Initial update
+    updateCount();
+    
+    // Update on category click
+    document.querySelectorAll('.category-btn').forEach(btn => {
+      btn.addEventListener('click', updateCount);
+    });
+  });
+</script>
+
+</body>
+</html>

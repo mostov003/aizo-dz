@@ -1,0 +1,1487 @@
+const express = require('express');
+const cors = require('cors');
+const fs = require('fs');
+const path = require('path');
+const dotenv = require('dotenv');
+const os = require('os');
+const { createZRProduct } = require('./utils/zrProduct');
+const { query, getAllOrders, getOrderById, getOrderByNumber, createOrder, updateOrderStatus, updateOrderShipping, deleteOrder, getAllLeads, createLead, deleteLead, getAllProducts, createProduct, closePrisma } = require('./utils/db');
+
+// تحميل المتغيرات
+dotenv.config();
+
+// Global error handlers to prevent server crash
+process.on('uncaughtException', (err) => {
+  console.error('🔥 CRITICAL: Uncaught Exception:', err);
+});
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('🔥 CRITICAL: Unhandled Rejection at:', promise, 'reason:', reason);
+});
+const config = require('./config');
+
+const app = express();
+const PORT = config.port;
+
+// Middleware
+app.use(cors({
+  origin: (origin, callback) => {
+    // Allow requests with no origin (like mobile apps, curl, or server-to-server requests)
+    if (!origin) return callback(null, true);
+    
+    const isAllowed = config.allowedOrigins.includes('*') || 
+                      config.allowedOrigins.includes(origin) ||
+                      (config.nodeEnv === 'development' && (origin.includes('localhost') || origin.includes('127.0.0.1')));
+                      
+    if (isAllowed) {
+      callback(null, true);
+    } else {
+      callback(new Error(`Not allowed by CORS: ${origin}`));
+    }
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin'],
+  exposedHeaders: ['Content-Length', 'Content-Range']
+}));
+// Set a larger limit to support base64 mockup uploads
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ limit: '50mb', extended: true }));
+
+// Vue build is intentionally NOT served — the static site at the project root is the live frontend.
+
+// 2. Serve uploads statically (with CORS headers for Fabric.js canvas compatibility)
+app.use('/uploads', express.static(path.join(__dirname, 'uploads'), {
+  maxAge: '1d',
+  etag: true,
+  lastModified: true,
+  setHeaders: (res) => {
+    // Required for Fabric.js: allow cross-origin image loading without tainting the canvas
+    res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+    res.setHeader('Access-Control-Allow-Origin', '*');
+  }
+}));
+
+// 3. Fallback serve root directory (so they can still access admin.html etc. if they want)
+app.use(express.static(__dirname, {
+  maxAge: '1d',
+  etag: true,
+  lastModified: true,
+  setHeaders: (res, filePath) => {
+    if (filePath.endsWith('.html')) {
+      res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+    }
+  }
+}));
+
+// ╔════════════════════════════════════════════════════════════╗
+// ║             ZR Express Configuration                       ║
+// ╚════════════════════════════════════════════════════════════╝
+
+const ZR_SECRET_KEY = config.zr.secretKey;
+const ZR_TENANT_ID = config.zr.tenantId;
+const ZR_BASE_URL = config.zr.baseUrl;
+
+console.log(`\n${'═'.repeat(60)}`);
+console.log(`🔐 ZR Express Configuration:`);
+console.log(`   Secret Key: ${ZR_SECRET_KEY ? '✓ Configured' : '✗ Missing'}`);
+console.log(`   Tenant ID: ${ZR_TENANT_ID ? '✓ Configured' : '✗ Missing'}`);
+console.log(`   Base URL: ${ZR_BASE_URL}`);
+console.log(`${'═'.repeat(60)}\n`);
+
+// ╔════════════════════════════════════════════════════════════╗
+// ║                   Database & Upload Paths                  ║
+// ╚════════════════════════════════════════════════════════════╝
+
+const DB_DIR = path.join(__dirname, 'db');
+const ORDERS_FILE = path.join(DB_DIR, 'orders.json');
+const PRODUCTS_FILE = path.join(DB_DIR, 'custom_products.json');
+const LEADS_FILE = path.join(DB_DIR, 'leads.json');
+const STOCKS_FILE = path.join(DB_DIR, 'product_stocks.json');
+const OVERRIDES_FILE = path.join(DB_DIR, 'default_overrides.json');
+const UPLOADS_DIR = path.join(__dirname, 'uploads');
+
+// Ensure db directory exists
+if (!fs.existsSync(DB_DIR)) {
+  fs.mkdirSync(DB_DIR);
+}
+
+// Ensure uploads directory exists
+if (!fs.existsSync(UPLOADS_DIR)) {
+  fs.mkdirSync(UPLOADS_DIR);
+}
+
+// Initialize files if they don't exist
+const initializeFile = (filePath, defaultContent) => {
+  if (!fs.existsSync(filePath)) {
+    fs.writeFileSync(filePath, JSON.stringify(defaultContent, null, 2));
+  }
+};
+
+initializeFile(ORDERS_FILE, []);
+initializeFile(PRODUCTS_FILE, []);
+initializeFile(LEADS_FILE, []);
+initializeFile(STOCKS_FILE, {});
+initializeFile(OVERRIDES_FILE, {});
+
+// ╔════════════════════════════════════════════════════════════╗
+// ║                 File I/O Helpers                           ║
+// ╚════════════════════════════════════════════════════════════╝
+
+const fsPromises = fs.promises;
+
+async function readJSON(filePath) {
+  try {
+    const data = await fsPromises.readFile(filePath, 'utf8');
+    return JSON.parse(data || '[]');
+  } catch (err) {
+    console.error(`❌ Error reading ${filePath}:`, err.message);
+    return [];
+  }
+}
+
+async function writeJSON(filePath, data) {
+  try {
+    await fsPromises.writeFile(filePath, JSON.stringify(data, null, 2));
+  } catch (err) {
+    console.error(`❌ Error writing ${filePath}:`, err.message);
+  }
+}
+
+// Helper to save base64 image to uploads/ folder without heavy RegExp (prevent stack overflow on large strings)
+function saveBase64Image(base64Str, prefix, orderId, suffix) {
+  if (!base64Str || !base64Str.startsWith('data:image/')) return base64Str;
+  try {
+    const commaIdx = base64Str.indexOf(',');
+    if (commaIdx === -1) return base64Str;
+    
+    const meta = base64Str.substring(0, commaIdx);
+    const data = base64Str.substring(commaIdx + 1);
+    
+    const mimeMatch = meta.match(/^data:([^;]+);base64$/);
+    const ext = mimeMatch ? mimeMatch[1].split('/')[1] : 'png';
+    
+    const buffer = Buffer.from(data, 'base64');
+    const filename = `${prefix}-${orderId}${suffix !== undefined && suffix !== null && suffix !== '' ? '-' + suffix : ''}.${ext}`;
+    const filePath = path.join(UPLOADS_DIR, filename);
+    
+    fs.writeFileSync(filePath, buffer);
+    console.log(`💾 Saved custom order asset: ${filename}`);
+    return `/uploads/${filename}`;
+  } catch (err) {
+    console.error('❌ Error saving base64 image:', err.message);
+    return base64Str;
+  }
+}
+
+// ╔════════════════════════════════════════════════════════════╗
+// ║        In-Memory JSON Cache (Reduces Disk I/O)             ║
+// ╚════════════════════════════════════════════════════════════╝
+
+const dataCache = new Map();
+const CACHE_TTL = 30000; // 30 seconds
+
+async function readJSONCached(filePath) {
+  const cached = dataCache.get(filePath);
+  if (cached && (Date.now() - cached.timestamp < CACHE_TTL)) {
+    return cached.data;
+  }
+  const data = await readJSON(filePath);
+  dataCache.set(filePath, { data, timestamp: Date.now() });
+  return data;
+}
+
+function invalidateCache(filePath) {
+  dataCache.delete(filePath);
+}
+
+async function writeJSONCached(filePath, data) {
+  await writeJSON(filePath, data);
+  dataCache.set(filePath, { data, timestamp: Date.now() });
+}
+
+// ╔════════════════════════════════════════════════════════════╗
+// ║            ZR Shipment Creation Function                   ║
+// ╚════════════════════════════════════════════════════════════╝
+
+const ZR_HUBS = [{"id":"ee77ffe4-19bf-4e34-9435-01a4b7670b7a","name":"Hub Adrar 01 مكتب أدرار"},{"id":"77aea009-96a2-4a42-b786-01b208a20294","name":"Hub El Oued 39 مكتب الوادي"},{"id":"bed0e06d-d4af-4fa4-809e-0bc8d0ff9213","name":"Hub Bouira 10 مكتب البويرة"},{"id":"376ea7e4-a89c-4ebb-96d4-0e0720244b4a","name":"Hub Taher 18 مكتب الطاهير"},{"id":"dfdd69b1-9209-4c22-a451-0fcfa12afade","name":"Hub Saida 20 مكتب سعيدة"},{"id":"774f0116-43a5-4dc5-a878-11b8b4eb1380","name":"Hub Birkhadem 16 مكتب بئرخادم"},{"id":"77c20585-fc73-44f7-91bc-11f11e4a3689","name":"Hub DELLYS 35 مكتب دلس"},{"id":"d17c6a44-c53c-4c2e-a489-219b1212aecd","name":"Tri Tlemcen 13 مركز فرز تلمسان"},{"id":"2f6c55b5-c104-43cf-a334-230a5f798ab1","name":"Hub Guelma 24 مكتب قالمة"},{"id":"456252e7-2937-423f-81a9-250bf42a7c8c","name":"Hub El Eulma 19 مكتب العلمة"},{"id":"bae46801-7d74-407c-af40-25f47bbbfd1b","name":"Hub Ouargla 30 مكتب ورقلة"},{"id":"9e9f8b08-b795-447d-90e8-274932a8249f","name":"Hub In Salah 53 مكتب عين صالح"},{"id":"88c60774-4f10-46f1-8615-2992d4d8b1f0","name":"Hub Reghaia 16  مكتب رغاية"},{"id":"f1d6e8c1-b444-4ef7-ad10-3332d57d6be8","name":"Hub Touggourt 55 مكتب تقرت"},{"id":"6fcf546e-6e1e-4aee-8dd0-349bbf7ac6e6","name":"Hub Kouba 16  مكتب القبة"},{"id":"7f004167-a914-4bc2-a94d-399d28796196","name":"Hub Ghardaia 47 مكتب غرداية"},{"id":"4036dfe9-e7ae-45c7-998a-3ad1f3590198","name":"Tri Boumerdes 35 مركز فرز بومرداس"},{"id":"41a035e6-182c-425d-b18d-3b292cdb4f19","name":"Hub Annaba 23 مكتب عنابة"},{"id":"23645333-674f-4b9f-b833-3bc1f21345e0","name":"Hub El Morchid 31 مكتب المرشد"},{"id":"6f22bad5-93b1-4adc-8b8b-3e9ea447ae49","name":"Hub Bordj menaiel 35 مكتب برج منايل"},{"id":"e975de4b-55a9-4f46-8a0b-3f44f9cc606a","name":"Hub Blida 09 مكتب البليدة"},{"id":"381ec9c7-b9b3-40ca-aed2-3faf72e66a02","name":"Tri Annaba 23 مركز فرز عنابة"},{"id":"03f347ec-466e-4421-943b-418b92aa121f","name":"Hub In Guezzam 54 مكتب عين قزام"},{"id":"d3f40abe-b020-4781-aab2-41a52eb01cc7","name":"Hub Relizane 48 مكتب غيليزان"},{"id":"9c3871c5-8f07-4a07-976d-44ebe70717ab","name":"Hub Menea 58  مكتب المنيعة"},{"id":"a6e91702-f9dc-45a6-a76d-45df5b87b0f4","name":"Tri Oran 31 مركز فرز وهران"},{"id":"bb45139d-1544-4316-bef9-46ea8a3ecf84","name":"Hub Tamanrasset 11 مكتب تامنراست"},{"id":"200d809f-a4cf-4849-beaa-479121f6a638","name":"Transit LAGHOUAT 03  مركزالعبور الأغواط"},{"id":"b32f0bbd-8f42-42a8-ba91-4d328017cebe","name":"Hub Mascara 29 مكتب معسكر"},{"id":"614e28bd-76e6-4947-9682-5065bc032726","name":"Hub Baraki 16 مكتب براقي"},{"id":"8293a00e-dcc4-43c4-ba83-517b007b1667","name":"Tri Bejaia 06 مركز فرز بجاية"},{"id":"c88f88ed-a846-47ac-b0a1-52857081a846","name":"Hub Batna 05 مكتب باتنة"},{"id":"dede6622-90f4-4b25-b27b-54ad88d4af97","name":"Hub Akbou 06 مكتب أقبو"},{"id":"60b40b18-380b-46dd-9d80-5975bab545b2","name":"Hub Mouzaia 09 مكتب موزاية"},{"id":"15ec1f9a-1cef-428a-b028-5e1a7e1685a6","name":"Hub El Meghaier 57 مكتب المغير"},{"id":"2cf061b2-c846-4939-b70d-6180f5c24a78","name":"Tri Tipaza 42 مركز فرز تيبازة"},{"id":"05458248-a2b8-473b-8938-6259c68b8c2e","name":"Hub Naama 45 مكتب النعامة"},{"id":"8bc58d93-d169-4a0a-a02c-650dff80ed26","name":"Hub Souk Ahras 41 مكتب سوق أهراس"},{"id":"aebfef39-9292-4e28-aa1f-65d274d1f8c1","name":"Hub Ain El Beida04مكتب عين البيضاء"},{"id":"b7d3850a-b400-4554-8e21-68731bb750e2","name":"Hub Laghouat 03 مكتب الأغواط"},{"id":"1c4565c6-d090-4cc9-bbc7-6d775562e3ee","name":"Hub Setif 19 مكتب سطيف"},{"id":"869396d4-47bd-41be-8ee4-6eea72f1097a","name":"Hub Zouaghi 25 مكتب زواغي"},{"id":"ca3a013d-2542-4499-80d3-700c2216dd52","name":"Hub Beni Abbes 52 مكتب بني عباس"},{"id":"fff06f30-bcb1-43f5-86a4-7138b90574e0","name":"Hub Bejaia 06 مكتب بجاية"},{"id":"d0bd34a1-2d5c-4484-906a-71abc3b38180","name":"Hub Kolea 42 مكتب القليعة"},{"id":"e98af19c-ba0f-4bbe-9b89-71ae829ec898","name":"Hub Mostaganem 27 مكتب مستغانem"},{"id":"9aa9b2ab-180a-4112-acda-752c96304ae6","name":"Hub Bou Saada 28 مكتب بوسعادة"},{"id":"cb2c04b1-c283-4c38-ae86-7d4f708d0f8f","name":"Hub Khenchela 40 مكتب خنشلة"},{"id":"9e16390f-f2de-43a4-afe0-7def0131647c","name":"Hub Skikda 21 مكتب سكيكدة"},{"id":"c329abc9-9492-48d0-916f-80cc111eea56","name":"Hub Birtouta 16 مكتب بئرتوتة"},{"id":"939ef30d-fd39-4f07-a0ba-822842df6ff0","name":"Hub Tlemcen 13 مكتب تلمسان"},{"id":"ebb341ef-93c9-4dab-b9de-9504a066bbcf","name":"Hub El Bouni 23 مكتب البوني"},{"id":"65576b7a-7ebf-40c1-98c3-95c06ea1cfc9","name":"Hub Timimoune 49 مكتب تيميمون"},{"id":"462a084c-7117-48cd-a6e5-9b5e0742a047","name":"Hub Bougara 09 مكتب بوقرة"},{"id":"63681fd2-4545-4376-b2da-9c1679316b10","name":"Hub Tipaza 42 مكتب تيبازة"},{"id":"8b83e69b-623c-476c-b554-9c46576c0e90","name":"Hub Belle vue 25 مكتب المنظر الجميل"},{"id":"875f1a17-0e90-4fb0-b88c-a2c88f99151b","name":"Hub Ouled Fayet 16 مكتب أولاد فايت"},{"id":"4c9e6fe9-8894-4bf6-8470-a2f572294bd4","name":"Hub Ain Temouchent 46 مكتب عبن تموشنت"},{"id":"02b9859e-17be-452a-9158-acdddddea798","name":"TRI Chlef 02 مركز فرز الشلف"},{"id":"0da58310-7e5b-4825-ab4a-ae3b290894a5","name":"Hub Médéa 26 مكتب المدية"},{"id":"26163ed5-cfcc-4c89-8171-af6f332f9355","name":"Hub El Jomhoria 16 مكتب الجمهورية"},{"id":"ffffad6e-4a31-4e05-84da-b16ad26c64b5","name":"Hub Sidi Belabes 22 مكتب سيدي بلعباس"},{"id":"93c9592d-9832-40b0-904e-b2a878b666e7","name":"Tri Setif 19 مركز فرز سطيف"},{"id":"a53e622e-f201-4ea9-a443-b2c1682fadc3","name":"hub Ténès 02 مكتب تـنـس"},{"id":"0c20b799-8b81-41bb-b9a3-b42e786998c7","name":"Hub M'sila 28 مكتب مسيلة"},{"id":"039daf35-c258-4ca3-9685-b769b6eb32d7","name":"Hub El Tarf 36 مكتب الطارف"},{"id":"8db7730a-f481-43f8-9770-bad3b74a458b","name":"Hub Maraval 31 مكتب مارافال"},{"id":"95f33f6b-d322-4d2f-a144-bec29c3ed4f7","name":"Hub Tizi Ouzou 15 مكتب تيزي وزو"},{"id":"114593cd-a1d9-4855-a73a-c0dbe400d1c7","name":"Hub Bordj bouareridj 34 مكتب برج بوعريريج"},{"id":"f1b3479a-156c-4d36-bd4a-c29dda99e26b","name":"Hub El Bayadh 32 مكتب البيض"},{"id":"9c795633-dfe2-4f46-af02-c5a79fefb55d","name":"Tri Biskra 07 مركز فرز بسكرة"},{"id":"e3ed5c0e-2979-4974-adce-c5d9b4680704","name":"Hub Boumerdes 35 مكتب بومرداس"},{"id":"12757299-dbd9-43f5-99a6-cabf1dde0f98","name":"Tri Skikda 21 مركز فرز سكيكدة"},{"id":"21759bf4-d11f-454c-8268-cac4b6cf85fd","name":"HUB CHERAGA مكتب شراقة 16 "},{"id":"ad2ca91e-cf67-44d3-a240-cebc19bc7c69","name":"Hub Béchar 08 مكتب بشار"},{"id":"944d0e5f-a21c-48d7-91cf-d6541663b504","name":"Hub Tissemsilt 38 مكتب تيسمسيلت"},{"id":"f063811e-0c82-4d83-880e-d871c913d094","name":"Hub Mila 43 مكتب ميلة"},{"id":"b7b663f5-2098-488a-80c4-de62a3241cd3","name":"Hub Jijel 18 مكتب جيجل"},{"id":"0902076b-b768-4195-8cb4-dec46be70237","name":"Hub Hassi Messaoud 30 مكتب حاسي مسعود"},{"id":"35bbaf96-3ea6-48e9-84c6-e00e0f20f807","name":"Tri Tiaret 14 مركز فرز تيارت"},{"id":"7a6de770-a039-43ff-9180-e1668a0ab61e","name":"Hub Tiaret 14 مكتب تيارت"},{"id":"3dba88d9-0916-436f-ba0f-e22b4826bb1c","name":"Hub Ain Defla 44 مكتب عين الدفلة"},{"id":"c97cda8a-2502-4cf8-95de-eae2db668f47","name":"Hub NOUVELLE VILLE 25 مكتب المدينة الجديدة"},{"id":"56d7c4ed-8514-41a8-b2c5-eb76c226d777","name":"Tri Médéa 26 مركز فرز المدية"},{"id":"7b43d667-242f-4e37-aa53-ed12fe8bdc8f","name":"Hub Canastel 31 مكتب كاناستال"},{"id":"9d812d89-6758-48f4-8160-ed33703a29e4","name":"Hub Tebessa 12 مكتب تبسة"},{"id":"da659108-041c-409e-abb9-ef145cca86a1","name":"Oum El Bouaghi04مكتب أم بواقي"},{"id":"658c43cb-5246-4c47-92c1-f37d88eece72","name":"Hub Biskra 07 مكتب بسكرة"},{"id":"f5e07fa1-fd59-421d-a17d-f3d5d1c029ff","name":"Hub Lidou 16  مكتب برج الكيفان"},{"id":"c6f7b6ea-9d8a-4985-af1c-f5849ace5d1f","name":"Tri Blida 09 مركز فرز البليدة"},{"id":"46a61165-5378-484d-a0c9-f5c1df785df9","name":"Hub Chlef 02 مكتب الشلف"},{"id":"65adf95c-e1a3-4c1e-a85d-f9f4c6dc6cf3","name":"Hub Djelfa 17 مكتب الجلفة"},{"id":"2429e83e-a56d-4069-9205-fc70fec84725","name":"Tri Souakria 16 مركز فرز سواكرية"},{"id":"7d6e7a8c-c5b0-4495-8271-fcf24efd3d7d","name":"Hub Ouled Djellal 51 مكتب أولاد جلال"}];
+
+let territoryCache = {};
+
+async function getTerritoryIds(wilayaCode) {
+  console.log(`\n🔍 Fetching Territory IDs for Wilaya Code: ${wilayaCode}`);
+  
+  if (territoryCache[wilayaCode]) {
+    console.log(`   ✓ Using cached territory`);
+    return territoryCache[wilayaCode];
+  }
+
+  try {
+    // Search for Wilaya
+    const searchRes = await fetch(`${ZR_BASE_URL}/territories/search`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Tenant': ZR_TENANT_ID,
+        'X-Api-Key': ZR_SECRET_KEY
+      },
+      body: JSON.stringify({
+        pageNumber: 1,
+        pageSize: 10,
+        advancedFilter: {
+          logic: 'and',
+          filters: [
+            { field: 'code', operator: 'eq', value: wilayaCode },
+            { field: 'level', operator: 'eq', value: 'wilaya' }
+          ]
+        }
+      })
+    });
+
+    const searchData = await searchRes.json();
+    
+    if (searchData.items && searchData.items.length > 0) {
+      const cityTerritoryId = searchData.items[0].id;
+      console.log(`   ✓ Found City Territory: ${cityTerritoryId}`);
+
+      // Get first commune/district
+      const distRes = await fetch(`${ZR_BASE_URL}/territories/search`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Tenant': ZR_TENANT_ID,
+          'X-Api-Key': ZR_SECRET_KEY
+        },
+        body: JSON.stringify({
+          pageNumber: 1,
+          pageSize: 1,
+          advancedFilter: {
+            logic: 'and',
+            filters: [
+              { field: 'parentId', operator: 'eq', value: cityTerritoryId },
+              { field: 'level', operator: 'eq', value: 'commune' }
+            ]
+          }
+        })
+      });
+
+      let districtTerritoryId = cityTerritoryId; // Fallback to city ID
+      const distData = await distRes.json();
+      
+      if (distData.items && distData.items.length > 0) {
+        districtTerritoryId = distData.items[0].id;
+        console.log(`   ✓ Found District Territory: ${districtTerritoryId}`);
+      }
+
+      const result = { cityTerritoryId, districtTerritoryId };
+      territoryCache[wilayaCode] = result;
+      return result;
+    }
+  } catch (err) {
+    console.warn(`   ⚠️ Error fetching territories: ${err.message}`);
+  }
+
+  console.log(`   ⚠️ Using default territories`);
+  return {
+    cityTerritoryId: '53c9e062-9c4e-4c77-8b71-55eabf887f83',
+    districtTerritoryId: '8d0b6cd9-7712-47d2-9ea4-460246494c32'
+  };
+}
+let cachedHubs = [];
+
+async function getHubs() {
+  if (cachedHubs.length > 0) return cachedHubs;
+  try {
+    const res = await fetch(`${ZR_BASE_URL}/hubs/search`, {
+      method: 'POST',
+      headers: {
+        'X-Tenant': ZR_TENANT_ID,
+        'X-Api-Key': ZR_SECRET_KEY,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ pageNumber: 1, pageSize: 500 })
+    });
+    if (res.ok) {
+      const data = await res.json();
+      cachedHubs = data.items || [];
+      console.log(`✓ Loaded ${cachedHubs.length} hubs from ZR Express API`);
+    }
+  } catch (err) {
+    console.error(`⚠️ Failed to load hubs from ZR:`, err.message);
+  }
+  if (cachedHubs.length === 0) {
+    console.log('⚠️ Using fallback ZR hubs list');
+    cachedHubs = ZR_HUBS;
+  }
+  return cachedHubs;
+}
+
+function findMatchingHub(officeName, wilayaCode) {
+  if (!officeName) return null;
+  const hubs = cachedHubs || [];
+  
+  console.log(`\n🔍 findMatchingHub called with officeName="${officeName}" and wilayaCode=${wilayaCode}`);
+
+  // Clean officeName
+  const cleanOffice = officeName
+    .replace(/^توصيل للمكتب\s*\(Office\)\s*-\s*/i, '')
+    .replace(/^توصيل للمكتب\s*-\s*/i, '')
+    .replace(/^التوصيل إلى المكتب\s*\(STOP DESK\)\s*-\s*/i, '')
+    .replace(/^التوصيل إلى المكتب\s*-\s*/i, '')
+    .replace(/\s*-\s*\(.*?\)/g, '')
+    .trim()
+    .toLowerCase();
+
+  console.log(`   Cleaned Office Name: "${cleanOffice}"`);
+
+  // Parse target wilaya code
+  const targetWilaya = parseInt(wilayaCode || cleanOffice.match(/\b\d+\b/)?.[0] || '16', 10);
+  console.log(`   Target Wilaya Code: ${targetWilaya}`);
+
+  let bestMatch = null;
+  let highestScore = 0;
+  const sameWilayaHubs = [];
+
+  for (const hub of hubs) {
+    const hubName = (hub.name || '').toLowerCase();
+    let score = 0;
+
+    // Check if hub belongs to target wilaya
+    const hubWilayaMatch = hubName.match(/\b\d+\b/);
+    const hubWilayaCode = hubWilayaMatch ? parseInt(hubWilayaMatch[0], 10) : null;
+
+    const wilayaMatches = hubWilayaCode === targetWilaya;
+    if (wilayaMatches) {
+      sameWilayaHubs.push(hub);
+      score += 15; // High priority for correct wilaya
+    }
+
+    // Token matching (allow tokens of length > 1 to keep codes like 18, 09)
+    const cleanTokens = (str) => str.replace(/[^a-zA-Z0-9\u0600-\u06FF]/g, ' ').split(/\s+/).filter(t => t.length > 1);
+    const officeTokens = cleanTokens(cleanOffice);
+    const hubTokens = cleanTokens(hubName);
+
+    for (const token of officeTokens) {
+      if (hubTokens.includes(token) || hubName.includes(token)) {
+        score += 5;
+      }
+    }
+
+    // Additional exact keyword check (exclude generic words)
+    const genericWords = ['hub', 'tri', 'transit', 'مكتب', 'مركز', 'فرز', 'توصيل'];
+    for (const token of officeTokens) {
+      if (!genericWords.includes(token) && hubName.includes(token)) {
+        score += 10;
+      }
+    }
+
+    if (score > highestScore) {
+      highestScore = score;
+      bestMatch = hub;
+    }
+  }
+
+  // Fallback check:
+  if ((!bestMatch || highestScore < 15) && sameWilayaHubs.length > 0) {
+    const preferredHub = sameWilayaHubs.find(h => h.name.toLowerCase().includes('hub') || h.name.includes('مكتب')) || sameWilayaHubs[0];
+    console.log(`   ⚠️ Precise match failed. Falling back to same-wilaya hub: "${preferredHub.name}"`);
+    return preferredHub;
+  }
+
+  if (bestMatch) {
+    console.log(`   ✓ Found best match: "${bestMatch.name}" (Score: ${highestScore})`);
+  } else {
+    console.log(`   ❌ No match found.`);
+  }
+
+  return bestMatch;
+}
+
+async function createZRShipment(order) {
+  console.log(`\n${'═'.repeat(60)}`);
+  console.log(`📦 Creating ZR Shipment for Order: #${order.id}`);
+  console.log(`${'═'.repeat(60)}`);
+
+  const customer = order.customer || {};
+  const safeName = String(customer.name || 'Client').trim() || 'Client';
+  const safePhone = String(customer.phone || '+213000000000').trim() || '+213000000000';
+  const safeWilaya = String(customer.wilaya || '16 - الجزائر').trim() || '16 - الجزائر';
+  
+  // Determine if it is a desk delivery (pickup office) or home delivery
+  const isDeskDelivery = customer.delivery && (customer.delivery.toLowerCase().includes('office') || customer.delivery.includes('مكتب'));
+  const deliveryType = isDeskDelivery ? 'pickup-point' : 'home';
+  
+  // Extract proper address
+  let safeAddress = '';
+  if (isDeskDelivery) {
+    safeAddress = (customer.delivery || '').replace(/^توصيل للمكتب\s*\(Office\)\s*-\s*/, '').replace(/^توصيل للمكتب\s*-\s*/, '').trim() || 'مكتب توصيل غير محدد';
+  } else {
+    safeAddress = String(customer.address || '').trim() || (customer.delivery || '').replace(/^توصيل للممنزل\s*\(Home\)\s*—\s*/, '').replace(/^توصيل للمنزل\s*—\s*/, '').trim() || 'العنوان غير محدد';
+  }
+  
+  const safeEmail = String(customer.email || 'customer@example.com').trim() || 'customer@example.com';
+
+  console.log(`✓ Customer: ${safeName}`);
+  console.log(`  Phone: ${safePhone}`);
+  console.log(`  Wilaya: ${safeWilaya}`);
+  console.log(`  Delivery Type: ${deliveryType}`);
+  console.log(`  Address: ${safeAddress}`);
+  console.log(`  Total: ${order.total || 0} DZD`);
+
+  // Format phone number
+  let phone = safePhone;
+  if (phone.startsWith('0')) {
+    phone = '+213' + phone.substring(1);
+  } else if (!phone.startsWith('+')) {
+    phone = '+213' + phone;
+  }
+  console.log(`  Formatted Phone: ${phone}`);
+
+  // Get territory IDs
+  const wilayaCode = parseInt(safeWilaya.match(/\d+/)?.[0] || '16', 10) || 16;
+  console.log(`\nFetching territory IDs for wilaya code: ${wilayaCode}`);
+  
+  let cityTerritoryId, districtTerritoryId;
+  try {
+    const ids = await getTerritoryIds(wilayaCode);
+    cityTerritoryId = ids.cityTerritoryId;
+    districtTerritoryId = ids.districtTerritoryId;
+    console.log(`✓ Territory IDs fetched successfully`);
+    console.log(`  City Territory: ${cityTerritoryId}`);
+    console.log(`  District Territory: ${districtTerritoryId}`);
+  } catch (err) {
+    console.warn(`⚠️ Error fetching territory IDs: ${err.message}`);
+    console.warn(`   Using default territory IDs`);
+    cityTerritoryId = '53c9e062-9c4e-4c77-8b71-55eabf887f83';
+    districtTerritoryId = '8d0b6cd9-7712-47d2-9ea4-460246494c32';
+  }
+
+  // Get hub ID for pickup points
+  let hubId = null;
+  if (deliveryType === 'pickup-point') {
+    console.log(`\n🔍 Finding Hub ID for office: "${customer.delivery}"`);
+    try {
+      const hubs = await getHubs();
+      const match = findMatchingHub(customer.delivery, wilayaCode);
+      if (match) {
+        hubId = match.id;
+        console.log(`   ✓ Found matching hub: "${match.name}" (ID: ${hubId})`);
+      } else {
+        console.warn(`   ⚠️ No matching hub found for: "${customer.delivery}"`);
+      }
+    } catch (err) {
+      console.error(`   ⚠️ Error matching hub:`, err.message);
+    }
+    
+    if (!hubId) {
+      throw new Error(`لم نتمكن من تحديد فرع التوصيل (Hub ID) في ZR Express لـ "${customer.delivery}". يرجى التأكد من اسم المكتب.`);
+    }
+  }
+
+  // Create shipment payload with documented ZR fields
+  const customerId = (globalThis.crypto && typeof globalThis.crypto.randomUUID === 'function')
+    ? globalThis.crypto.randomUUID()
+    : '11111111-1111-4111-8111-111111111111';
+  const uniqueExternalId = `${String(order.id || 'ORDER').replace(/\s+/g, '-').toUpperCase()}-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+
+  // Fallback payload if ZR expects different format
+  const payload = {
+    customer: {
+      customerId: customerId,
+      name: safeName,
+      email: safeEmail,
+      phone: {
+        number1: phone
+      }
+    },
+    deliveryAddress: {
+      street: safeAddress,
+      city: safeWilaya.replace(/^\d+\s*-\s*/, ''),
+      zipCode: '',
+      district: 'Commune',
+      cityTerritoryId: cityTerritoryId,
+      districtTerritoryId: districtTerritoryId
+    },
+    orderedProducts: (order.items || []).map((item, idx) => ({
+      productName: item.name || item.productName || `Product ${idx + 1}`,
+      productSku: item.sku || item.productSku || `SKU-${order.id}-${idx + 1}`,
+      quantity: parseInt(item.quantity || item.qty || 1, 10) || 1,
+      unitPrice: parseFloat(item.price || item.unitPrice || 0) || 0,
+      weight: Math.max(1, parseFloat(item.weight || item.itemWeight || 1) || 1),
+      stockType: item.stockType || 'none'
+    })),
+    amount: parseFloat(order.total || 0) || 0,
+    weight: {
+      weight: 1,
+      dimensionalWeight: 1
+    },
+    description: `Order #${order.id}`,
+    deliveryType: deliveryType,
+    hubId: hubId,
+    externalId: uniqueExternalId,
+    notes: ''
+  };
+
+  console.log(`\n📦 Full Payload:`);
+  console.log(JSON.stringify(payload, null, 2));
+
+  console.log(`\n🚀 Sending to ZR Express API...`);
+  console.log(`   URL: POST ${ZR_BASE_URL}/parcels`);
+
+  // Send request to ZR Express
+  const response = await fetch(`${ZR_BASE_URL}/parcels`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-Tenant': ZR_TENANT_ID,
+      'X-Api-Key': ZR_SECRET_KEY
+    },
+    body: JSON.stringify(payload)
+  });
+
+  console.log(`\n📨 Response from ZR Express:`);
+  console.log(`   HTTP Status: ${response.status} ${response.statusText}`);
+
+  const responseText = await response.text();
+  let errorBody = null;
+  try {
+    errorBody = responseText ? JSON.parse(responseText) : null;
+  } catch (_) {}
+
+  // Check if request was successful
+  if (!response.ok) {
+    const detailMessage = errorBody?.detail || errorBody?.message || errorBody?.errors?.[0]?.description || responseText || 'Empty response';
+    if (String(detailMessage).toLowerCase().includes('duplicateexternalid') || String(detailMessage).toLowerCase().includes('already exists within the last 12 hours')) {
+      console.warn('⚠️ Duplicate external ID detected. Retrying with a fresh ID once...');
+      const retryPayload = { ...payload, externalId: `${String(order.id || 'ORDER').replace(/\s+/g, '-').toUpperCase()}-${Date.now()}-${Math.floor(Math.random() * 1000)}` };
+      const retryResponse = await fetch(`${ZR_BASE_URL}/parcels`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Tenant': ZR_TENANT_ID,
+          'X-Api-Key': ZR_SECRET_KEY
+        },
+        body: JSON.stringify(retryPayload)
+      });
+      const retryText = await retryResponse.text();
+      let retryBody = null;
+      try { retryBody = retryText ? JSON.parse(retryText) : null; } catch (_) {}
+      if (!retryResponse.ok) {
+        const retryDetail = retryBody?.detail || retryBody?.message || retryBody?.errors?.[0]?.description || retryText || 'Empty response';
+        throw new Error(`ZR API Error ${retryResponse.status}: ${retryDetail}`);
+      }
+      const retryData = JSON.parse(retryText);
+      return await finalizeShipment(retryData, retryResponse, retryText);
+    }
+    throw new Error(`ZR API Error ${response.status}: ${detailMessage}`);
+  }
+
+  // Parse successful response
+  let parcelData;
+  try {
+    parcelData = JSON.parse(responseText);
+  } catch (e) {
+    throw new Error(`ZR API returned invalid JSON: ${responseText}`);
+  }
+
+  return await finalizeShipment(parcelData);
+
+  async function finalizeShipment(parcelData) {
+    const zrParcelId = parcelData.id || parcelData.parcelId || parcelData.reference;
+
+    if (!zrParcelId) {
+      throw new Error(`ZR API response missing parcel ID`);
+    }
+
+    console.log(`✅ Shipment Created Successfully!`);
+    let trackingNumber = `ZR-${zrParcelId}`;
+    try {
+      const detailResponse = await fetch(`${ZR_BASE_URL}/parcels/${zrParcelId}`, {
+        method: 'GET',
+        headers: {
+          'X-Tenant': ZR_TENANT_ID,
+          'X-Api-Key': ZR_SECRET_KEY
+        }
+      });
+
+      if (detailResponse.ok) {
+        const detail = await detailResponse.json();
+        if (detail.trackingNumber) {
+          trackingNumber = detail.trackingNumber;
+        }
+      }
+    } catch (err) {
+      console.warn(`⚠️ Could not retrieve tracking number: ${err.message}`);
+    }
+
+    return { zrParcelId, trackingNumber };
+  }
+}
+
+// ╔════════════════════════════════════════════════════════════╗
+// ║                API Routes - Orders                         ║
+// ╚════════════════════════════════════════════════════════════╗
+
+app.get('/api/orders', async (req, res) => {
+  try {
+    const orders = await getAllOrders();
+    res.json(orders || []);
+  } catch (err) {
+    console.error('❌ Error fetching orders:', err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post('/api/orders', async (req, res) => {
+  try {
+    const newOrder = req.body;
+
+    // Process custom order files if present
+    if (newOrder.customOrder) {
+      const co = newOrder.customOrder;
+      if (co.mockupSnapshot) {
+        co.mockupSnapshot = saveBase64Image(co.mockupSnapshot, 'mockup', newOrder.id || 'new', '');
+      }
+      if (co.layers && Array.isArray(co.layers)) {
+        co.layers.forEach((layer, idx) => {
+          if (layer.img) {
+            layer.img = saveBase64Image(layer.img, 'design', newOrder.id || 'new', idx);
+          }
+        });
+      }
+    }
+
+    const order = await createOrder(newOrder);
+    res.status(201).json(order);
+  } catch (err) {
+    console.error('❌ Error creating order:', err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ╔════════════════════════════════════════════════════════════╗
+// ║           API Route - Create ZR Shipment                   ║
+// ╚════════════════════════════════════════════════════════════╗
+
+app.post('/api/orders/:id/deliver', async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const order = await getOrderById(id);
+    if (!order) {
+      console.error(`❌ Order #${id} not found`);
+      return res.status(404).json({
+        success: false,
+        error: `Order #${id} not found`
+      });
+    }
+
+    // Create shipment
+    const { zrParcelId, trackingNumber } = await createZRShipment(order);
+
+    // Update order with shipping info
+    const updatedOrder = await updateOrderShipping(id, {
+      trackingNumber,
+      zrParcelId,
+      zrStatus: { state: 'OrderReceived', situation: '' }
+    });
+
+    res.json({
+      success: true,
+      trackingNumber,
+      zrParcelId,
+      order: updatedOrder
+    });
+
+  } catch (error) {
+    console.error('❌ Error delivering order:', error.message);
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
+// ✅ Ship order via ZR Express
+app.post('/api/orders/:id/ship-zr', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { customerName, customerPhone, wilaya, address } = req.body;
+
+    const order = await getOrderById(id);
+    if (!order) {
+      console.error(`❌ Order #${id} not found`);
+      return res.status(404).json({
+        success: false,
+        error: `Order #${id} not found`
+      });
+    }
+
+    console.log(`🚚 Shipping order #${id} via ZR Express...`);
+
+    try {
+      // Try to create ZR shipment
+      const { zrParcelId, trackingNumber } = await createZRShipment(order);
+
+      // Update order with tracking info (persist to PostgreSQL)
+      const zrStatus = {
+        state: 'OrderReceived',
+        situation: 'تم استقبال الطلب'
+      };
+      await updateOrderShipping(id, {
+        trackingNumber,
+        zrParcelId,
+        zrStatus
+      });
+      order.zrStatus = zrStatus;
+
+      console.log(`✅ Order #${id} shipped successfully. Tracking: ${trackingNumber}`);
+
+      res.json({
+        success: true,
+        trackingNumber,
+        parcelId: zrParcelId,
+        status: order.zrStatus,
+        message: `✅ تم إرسال الطلب إلى ZR Express بنجاح`
+      });
+    } catch (zrError) {
+      console.warn(`⚠️ ZR shipment failed for order #${id}:`, zrError.message);
+      
+      // Fallback: still mark the order as shipped locally (persist to PostgreSQL)
+      order.trackingNumber = `LOCAL-${id}-${Date.now()}`;
+      await updateOrderShipping(id, {
+        trackingNumber: order.trackingNumber,
+        zrParcelId: null,
+        zrStatus: { state: 'Shipped', situation: 'تم تسليم الطلب محلياً' }
+      });
+
+      res.json({
+        success: true,
+        trackingNumber: order.trackingNumber,
+        parcelId: null,
+        status: { state: 'Shipped', situation: 'تم تسليم الطلب محلياً' },
+        warning: 'تم التسليم محلياً (ZR غير متاح حالياً)'
+      });
+    }
+
+  } catch (error) {
+    console.error(`❌ Error shipping order:`, error);
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
+// ╔════════════════════════════════════════════════════════════╗
+// ║              Additional API Routes                         ║
+// ╚════════════════════════════════════════════════════════════╗
+
+app.put('/api/orders/:id/status', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status } = req.body;
+    
+    if (!status) {
+      return res.status(400).json({ error: 'Status is required' });
+    }
+    
+    const updatedOrder = await updateOrderStatus(id, status);
+    console.log(`✅ Updated order ${id} status to ${status}`);
+    res.json(updatedOrder);
+  } catch (err) {
+    console.error(`❌ Error updating order status: ${err.message}`);
+    res.status(500).json({ error: 'Failed to update order status', message: err.message });
+  }
+});
+
+// PATCH endpoint to support updates from Vue admin dashboard
+app.patch('/api/orders/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status, ...otherData } = req.body;
+    
+    // Build update fields
+    const updateFields = [];
+    const updateParams = [id];
+    let paramCount = 1;
+    
+    if (status !== undefined) {
+      updateFields.push(`"status" = $${++paramCount}`);
+      updateParams.push(status);
+    }
+    
+    // Handle other fields
+    if (otherData.customerName !== undefined) {
+      updateFields.push(`"customerName" = $${++paramCount}`);
+      updateParams.push(otherData.customerName);
+    }
+    if (otherData.customerPhone !== undefined) {
+      updateFields.push(`"customerPhone" = $${++paramCount}`);
+      updateParams.push(otherData.customerPhone);
+    }
+    if (otherData.customerEmail !== undefined) {
+      updateFields.push(`"customerEmail" = $${++paramCount}`);
+      updateParams.push(otherData.customerEmail);
+    }
+    if (otherData.notes !== undefined) {
+      updateFields.push(`"notes" = $${++paramCount}`);
+      updateParams.push(otherData.notes);
+    }
+    
+    updateFields.push(`"updatedAt" = NOW()`);
+    
+    if (updateFields.length === 1) { // Only updatedAt
+      return res.status(400).json({ error: 'No fields to update' });
+    }
+    
+    const sql = `
+      UPDATE "Order" 
+      SET ${updateFields.join(', ')}
+      WHERE id = $1
+      RETURNING *
+    `;
+    
+    const result = await query(sql, updateParams);
+    
+    if (result.length === 0) {
+      return res.status(404).json({ error: 'Order not found', orderId: id });
+    }
+    
+    console.log(`✅ Patched order ${id}`);
+    res.json(result[0]);
+  } catch (err) {
+    console.error(`❌ Error patching order: ${err.message}`);
+    res.status(500).json({ error: 'Failed to patch order', message: err.message });
+  }
+});
+
+
+// Update customer info endpoint
+app.put('/api/orders/:id/customer', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { name, phone, email, wilaya, address, delivery, deliveryType, officeName, total, shipping, subtotal } = req.body;
+    
+    const updateFields = [];
+    const updateParams = [id];
+    let paramCount = 1;
+    
+    if (name !== undefined) {
+      updateFields.push(`"customerName" = $${++paramCount}`);
+      updateParams.push(name);
+    }
+    if (phone !== undefined) {
+      updateFields.push(`"customerPhone" = $${++paramCount}`);
+      updateParams.push(phone);
+    }
+    if (email !== undefined) {
+      updateFields.push(`"customerEmail" = $${++paramCount}`);
+      updateParams.push(email);
+    }
+    if (wilaya !== undefined) {
+      updateFields.push(`"customerWilaya" = $${++paramCount}`);
+      updateParams.push(wilaya);
+    }
+    if (address !== undefined) {
+      updateFields.push(`"customerAddress" = $${++paramCount}`);
+      updateParams.push(address);
+    }
+    if (delivery !== undefined) {
+      updateFields.push(`"delivery" = $${++paramCount}`);
+      updateParams.push(delivery);
+    }
+    if (deliveryType !== undefined) {
+      updateFields.push(`"deliveryOffice" = $${++paramCount}`);
+      updateParams.push(deliveryType || officeName);
+    }
+    if (total !== undefined) {
+      updateFields.push(`"total" = $${++paramCount}`);
+      updateParams.push(parseFloat(total) || 0);
+    }
+    if (shipping !== undefined) {
+      updateFields.push(`"shippingCost" = $${++paramCount}`);
+      updateParams.push(parseFloat(shipping) || 0);
+    }
+    if (subtotal !== undefined) {
+      updateFields.push(`"subtotal" = $${++paramCount}`);
+      updateParams.push(parseFloat(subtotal) || 0);
+    }
+    
+    if (updateFields.length === 0) {
+      return res.status(400).json({ success: false, error: 'No fields to update' });
+    }
+    
+    updateFields.push('"updatedAt" = NOW()');
+    
+    const sql = `
+      UPDATE "Order" 
+      SET ${updateFields.join(', ')}
+      WHERE id = $1
+      RETURNING *
+    `;
+    
+    const result = await query(sql, updateParams);
+    
+    if (result.length === 0) {
+      return res.status(404).json({ success: false, error: 'Order not found' });
+    }
+    
+    res.json({
+      success: true,
+      message: 'Customer information updated successfully',
+      order: result[0]
+    });
+  } catch (err) {
+    console.error('❌ Error updating customer info:', err.message);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// Update custom order design layers & specs endpoint
+app.put('/api/orders/:id/custom-order', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { customOrder } = req.body;
+    
+    // Check if order exists
+    const checkSql = `SELECT id FROM "Order" WHERE id = $1`;
+    const checkResult = await query(checkSql, [id]);
+    
+    if (checkResult.length === 0) {
+      return res.status(404).json({ success: false, error: 'Order not found' });
+    }
+    
+    // Update custom order data
+    if (customOrder) {
+      // Process design layers to save base64 images into physical files
+      if (customOrder.layers && Array.isArray(customOrder.layers)) {
+        customOrder.layers.forEach((layer, lIdx) => {
+          if (layer.img && layer.img.startsWith('data:image/')) {
+            layer.img = saveBase64Image(layer.img, 'design', id, lIdx);
+          }
+        });
+      }
+      
+      const customOrderData = JSON.stringify(customOrder);
+      
+      // Update the customOrder JSON fields
+      const updateSql = `
+        UPDATE "Order" 
+        SET "customOrder" = true, "customOrderDetails" = $2, "updatedAt" = NOW()
+        WHERE id = $1
+        RETURNING *
+      `;
+      
+      await query(updateSql, [id, customOrderData]);
+
+      // Sync CustomLayer table
+      await query('DELETE FROM "CustomLayer" WHERE "orderId" = $1', [id]);
+      if (customOrder.layers && Array.isArray(customOrder.layers)) {
+        for (let idx = 0; idx < customOrder.layers.length; idx++) {
+          const layer = customOrder.layers[idx];
+          const layerId = require('crypto').randomBytes(8).toString('hex');
+          await query(
+            `INSERT INTO "CustomLayer" (id, "orderId", "layerIndex", "imageUrl", area, text)
+             VALUES ($1, $2, $3, $4, $5, $6)`,
+            [
+              layerId,
+              id,
+              idx,
+              layer.img || layer.imageUrl || '',
+              layer.area || null,
+              layer.text || null
+            ]
+          );
+        }
+      }
+
+      // Fetch and return the fully populated order
+      const fullOrder = await getOrderById(id);
+      
+      res.json({
+        success: true,
+        message: 'Custom order updated successfully',
+        order: fullOrder
+      });
+    } else {
+      res.status(400).json({ success: false, error: 'No custom order data provided' });
+    }
+  } catch (err) {
+    console.error('❌ Error updating custom order:', err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+app.delete('/api/orders/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    await deleteOrder(id);
+    res.json({ success: true });
+  } catch (err) {
+    console.error('❌ Error deleting order:', err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+
+// Test route to verify territories
+app.get('/api/test-territories', async (req, res) => {
+  try {
+    const ids = await getTerritoryIds(16);
+    res.json({ success: true, territories: ids });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ╔════════════════════════════════════════════════════════════╗
+// ║                API Routes - Leads (Emails)                 ║
+// ╚════════════════════════════════════════════════════════════╗
+
+app.get('/api/leads', async (req, res) => {
+  try {
+    const leads = await getAllLeads();
+    res.json(leads || []);
+  } catch (err) {
+    console.error('❌ Error fetching leads:', err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post('/api/leads', async (req, res) => {
+  try {
+    const { email, name } = req.body;
+    if (!email) {
+      return res.status(400).json({ error: 'Email is required' });
+    }
+    const newLead = await createLead(email, name || '', '');
+    if (!newLead) {
+      return res.status(409).json({ error: 'Email already exists' });
+    }
+    res.status(201).json(newLead);
+  } catch (err) {
+    console.error('❌ Error creating lead:', err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.delete('/api/leads/:email', async (req, res) => {
+  try {
+    const { email } = req.params;
+    // Find lead by email and delete
+    const allLeads = await getAllLeads();
+    const lead = allLeads.find(l => l.email === decodeURIComponent(email));
+    if (!lead) {
+      return res.status(404).json({ error: 'Lead not found' });
+    }
+    await deleteLead(lead.id);
+    res.json({ success: true });
+  } catch (err) {
+    console.error('❌ Error deleting lead:', err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ╔════════════════════════════════════════════════════════════╗
+// ║                API Routes - Products                       ║
+// ╚════════════════════════════════════════════════════════════╗
+
+app.get('/api/products', async (req, res) => {
+  try {
+    const products = await getAllProducts();
+    res.json(products || []);
+  } catch (err) {
+    console.error('❌ Error fetching products:', err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post('/api/zr-products', async (req, res) => {
+  try {
+    const result = await createZRProduct(req.body, {
+      tenantId: ZR_TENANT_ID,
+      apiKey: ZR_SECRET_KEY,
+      baseUrl: ZR_BASE_URL
+    });
+    res.json(result);
+  } catch (error) {
+    console.error('ZR product creation failed:', error);
+    res.status(error.status || 500).json({
+      success: false,
+      error: error.message || 'ZR product creation failed'
+    });
+  }
+});
+
+app.post('/api/products', async (req, res) => {
+  try {
+    const newProduct = await createProduct(req.body);
+    res.status(201).json(newProduct);
+  } catch (err) {
+    console.error('❌ Error creating product:', err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.put('/api/products/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const updateFields = [];
+    const updateParams = [id];
+    let paramCount = 1;
+    
+    if (req.body.name !== undefined) {
+      updateFields.push(`"name" = $${++paramCount}`);
+      updateParams.push(req.body.name);
+    }
+    if (req.body.price !== undefined) {
+      updateFields.push(`"price" = $${++paramCount}`);
+      updateParams.push(req.body.price);
+    }
+    if (req.body.description !== undefined) {
+      updateFields.push(`"description" = $${++paramCount}`);
+      updateParams.push(req.body.description);
+    }
+    if (req.body.image !== undefined) {
+      updateFields.push(`"image" = $${++paramCount}`);
+      updateParams.push(req.body.image);
+    }
+    if (req.body.sizes !== undefined) {
+      updateFields.push(`"sizes" = $${++paramCount}`);
+      updateParams.push(JSON.stringify(req.body.sizes));
+    }
+    if (req.body.colors !== undefined) {
+      updateFields.push(`"colors" = $${++paramCount}`);
+      updateParams.push(JSON.stringify(req.body.colors));
+    }
+    if (req.body.customizable !== undefined) {
+      updateFields.push(`"customizable" = $${++paramCount}`);
+      updateParams.push(req.body.customizable);
+    }
+    
+    if (updateFields.length === 0) {
+      return res.status(400).json({ error: 'No fields to update' });
+    }
+    
+    updateFields.push('"updatedAt" = NOW()');
+    
+    const sql = `
+      UPDATE "Product" 
+      SET ${updateFields.join(', ')}
+      WHERE "productId" = $1
+      RETURNING *
+    `;
+    
+    const result = await query(sql, updateParams);
+    
+    if (result.length === 0) {
+      return res.status(404).json({ error: 'Product not found' });
+    }
+    
+    res.json(result[0]);
+  } catch (err) {
+    console.error('❌ Error updating product:', err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.delete('/api/products/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const sql = `
+      DELETE FROM "Product" 
+      WHERE "productId" = $1
+      RETURNING id
+    `;
+    
+    const result = await query(sql, [id]);
+    
+    if (result.length === 0) {
+      return res.status(404).json({ error: 'Product not found' });
+    }
+    
+    res.json({ success: true });
+  } catch (err) {
+    console.error('❌ Error deleting product:', err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.get('/api/custom-products', async (req, res) => {
+  const products = await readJSONCached(PRODUCTS_FILE);
+  res.json(products || []);
+});
+
+app.post('/api/custom-products', async (req, res) => {
+  const products = await readJSONCached(PRODUCTS_FILE);
+  const newProduct = { ...req.body, id: req.body.id || Date.now().toString(), isCustom: true };
+  products.push(newProduct);
+  await writeJSONCached(PRODUCTS_FILE, products);
+  res.status(201).json(newProduct);
+});
+
+app.put('/api/custom-products/:id', async (req, res) => {
+  const { id } = req.params;
+  const products = await readJSONCached(PRODUCTS_FILE);
+  const idx = products.findIndex(p => String(p.id) === String(id));
+  if (idx === -1) return res.status(404).json({ error: 'Custom product not found' });
+  products[idx] = { ...products[idx], ...req.body, id: products[idx].id, isCustom: true };
+  await writeJSONCached(PRODUCTS_FILE, products);
+  res.json(products[idx]);
+});
+
+app.delete('/api/custom-products/:id', async (req, res) => {
+  const { id } = req.params;
+  let products = await readJSONCached(PRODUCTS_FILE);
+  const initialLength = products.length;
+  products = products.filter(p => String(p.id) !== String(id));
+  if (products.length < initialLength) {
+    await writeJSONCached(PRODUCTS_FILE, products);
+    res.json({ success: true });
+  } else {
+    res.status(404).json({ error: 'Custom product not found' });
+  }
+});
+
+app.get('/api/default-products', async (req, res) => {
+  res.json([]);
+});
+
+app.delete('/api/default-products/:id', async (req, res) => {
+  res.status(200).json({ success: true, message: 'Default products are managed client-side' });
+});
+
+// ╔════════════════════════════════════════════════════════════╗
+// ║                API Routes - Stocks                         ║
+// ╚════════════════════════════════════════════════════════════╗
+
+app.get('/api/stocks', async (req, res) => {
+  const stocks = await readJSONCached(STOCKS_FILE);
+  res.json(stocks || {});
+});
+
+app.get('/api/product-stocks', async (req, res) => {
+  const stocks = await readJSONCached(STOCKS_FILE);
+  res.json(stocks || {});
+});
+
+app.post('/api/stocks', async (req, res) => {
+  const stocks = await readJSONCached(STOCKS_FILE);
+  const { productId, quantity } = req.body;
+  if (!productId) {
+    return res.status(400).json({ error: 'Product ID is required' });
+  }
+  stocks[productId] = quantity || 0;
+  await writeJSONCached(STOCKS_FILE, stocks);
+  res.json({ success: true, productId, quantity });
+});
+
+app.post('/api/product-stocks', async (req, res) => {
+  const stocks = await readJSONCached(STOCKS_FILE);
+  const { productId, quantity } = req.body;
+  if (!productId) {
+    return res.status(400).json({ error: 'Product ID is required' });
+  }
+  stocks[productId] = quantity || 0;
+  await writeJSONCached(STOCKS_FILE, stocks);
+  res.json({ success: true, productId, quantity });
+});
+
+app.get('/api/default-overrides', async (req, res) => {
+  const overrides = await readJSONCached(OVERRIDES_FILE);
+  res.json(overrides || {});
+});
+
+app.post('/api/default-overrides', async (req, res) => {
+  const overrides = await readJSONCached(OVERRIDES_FILE);
+  await writeJSONCached(OVERRIDES_FILE, { ...overrides, ...req.body });
+  res.json({ success: true });
+});
+
+// ╔════════════════════════════════════════════════════════════╗
+// ║                API Routes - Status Updates                 ║
+// ╚════════════════════════════════════════════════════════════╗
+
+app.post('/api/orders/:id/sync-zr', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const orders = await readJSONCached(ORDERS_FILE);
+    const order = orders.find(o => String(o.id) === String(id));
+
+    if (!order) {
+      return res.status(404).json({ success: false, error: `Order #${id} not found` });
+    }
+
+    if (!order.zrParcelId) {
+      return res.status(400).json({ 
+        success: false, 
+        error: `Order #${id} has no ZR Parcel ID` 
+      });
+    }
+
+    // Sync with ZR API (fetch current status)
+    const syncResponse = await fetch(`${ZR_BASE_URL}/parcels/${order.zrParcelId}`, {
+      method: 'GET',
+      headers: {
+        'X-Tenant': ZR_TENANT_ID,
+        'X-Api-Key': ZR_SECRET_KEY
+      }
+    });
+
+    if (!syncResponse.ok) {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'Failed to sync with ZR Express' 
+      });
+    }
+
+    const zrData = await syncResponse.json();
+    
+    // Extract state and situation from zrData
+    const zrState = zrData.status?.state || zrData.status || 'OrderReceived';
+    const zrSituation = zrData.status?.situation || '';
+    
+    order.zrStatus = {
+      state: zrState,
+      situation: zrSituation
+    };
+    
+    // Map ZR status to local order status
+    if (zrState === 'Delivered') {
+      order.status = 'Delivered';
+    } else if (zrState === 'Returned' || zrState === 'ReturnReceived' || zrState === 'ReturnCreated') {
+      order.status = 'Returned';
+    } else if (zrState === 'Cancelled') {
+      order.status = 'Cancelled';
+    } else {
+      order.status = 'Confirmed'; // Keep it Confirmed while in transit
+    }
+
+    order.lastSyncedAt = new Date().toISOString();
+
+    const orderIdx = orders.findIndex(o => String(o.id) === String(id));
+    if (orderIdx > -1) {
+      orders[orderIdx] = order;
+      await writeJSONCached(ORDERS_FILE, orders);
+    }
+
+    res.json({ success: true, order, zrData });
+  } catch (err) {
+    console.error(`Error syncing ZR:`, err.message);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// Fallback for single page application (SPA) routes to support Vue router
+app.get('*', (req, res, next) => {
+  if (req.path.startsWith('/api') || req.path.startsWith('/uploads') || req.path.includes('.')) {
+    return next();
+  }
+  res.sendFile(path.join(__dirname, 'index.html'));
+});
+
+// ╔════════════════════════════════════════════════════════════╗
+// ║                  Server Startup                            ║
+// ╚════════════════════════════════════════════════════════════╗
+
+app.listen(PORT, () => {
+  console.log(`\n✅ Server Started`);
+  console.log(`   Local: http://localhost:${PORT}`);
+
+  const nets = os.networkInterfaces();
+  for (const name of Object.keys(nets)) {
+    for (const net of nets[name]) {
+      if (net.family === 'IPv4' && !net.internal) {
+        console.log(`   Network: http://${net.address}:${PORT}`);
+      }
+    }
+  }
+
+  console.log(`\n✓ Ready to accept requests\n`);
+});
+
+// ╔════════════════════════════════════════════════════════════╗
+// ║       Health Check & ZR Express Keep-Alive System           ║
+// ╚════════════════════════════════════════════════════════════╗
+
+// Health Check endpoint (for uptime monitoring services)
+app.get('/api/health', async (req, res) => {
+  const health = {
+    status: 'ok',
+    uptime: Math.floor(process.uptime()),
+    timestamp: new Date().toISOString(),
+    memory: {
+      used: Math.round(process.memoryUsage().heapUsed / 1024 / 1024) + ' MB',
+      total: Math.round(process.memoryUsage().heapTotal / 1024 / 1024) + ' MB'
+    },
+    zrExpress: { status: 'unknown' }
+  };
+
+  // Quick ZR Express connectivity test
+  try {
+    const zrRes = await fetch(`${ZR_BASE_URL}/hubs/search`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Tenant': ZR_TENANT_ID,
+        'X-Api-Key': ZR_SECRET_KEY
+      },
+      body: JSON.stringify({ pageNumber: 1, pageSize: 1 }),
+      signal: AbortSignal.timeout(5000)
+    });
+    health.zrExpress.status = zrRes.ok ? 'connected' : 'error';
+    health.zrExpress.statusCode = zrRes.status;
+  } catch (err) {
+    health.zrExpress.status = 'disconnected';
+    health.zrExpress.error = err.message;
+  }
+
+  res.json(health);
+});
+
+// ZR Express Keep-Alive: Periodic ping every 10 minutes
+// This prevents the ZR Express API session from going stale
+const ZR_KEEPALIVE_INTERVAL = 10 * 60 * 1000; // 10 minutes
+
+let keepAliveTimer = null;
+
+async function zrKeepAlivePing() {
+  try {
+    const res = await fetch(`${ZR_BASE_URL}/hubs/search`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Tenant': ZR_TENANT_ID,
+        'X-Api-Key': ZR_SECRET_KEY
+      },
+      body: JSON.stringify({ pageNumber: 1, pageSize: 1 }),
+      signal: AbortSignal.timeout(10000)
+    });
+    console.log(`🏓 ZR Keep-Alive: ${res.ok ? '✓ OK' : '✗ Error ' + res.status} (${new Date().toLocaleTimeString()})`);
+  } catch (err) {
+    console.warn(`🏓 ZR Keep-Alive: ✗ Failed — ${err.message}`);
+  }
+}
+
+// Start keep-alive pings after server starts
+keepAliveTimer = setInterval(zrKeepAlivePing, ZR_KEEPALIVE_INTERVAL);
+console.log(`🏓 ZR Express Keep-Alive: Running every ${ZR_KEEPALIVE_INTERVAL / 60000} minutes`);
+
+// ╔════════════════════════════════════════════════════════════╗
+// ║              Graceful Shutdown Handler                      ║
+// ╚════════════════════════════════════════════════════════════╝
+
+async function gracefulShutdown(signal) {
+  console.log(`\n⏹️  Received ${signal}. Shutting down gracefully...`);
+  if (keepAliveTimer) clearInterval(keepAliveTimer);
+  try {
+    await closePrisma(); // Close database connection pool
+    console.log('✅ Database connections closed.');
+  } catch (err) {
+    console.error('❌ Error closing database:', err.message);
+  }
+  process.exit(0);
+}
+
+process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+process.on('SIGINT',  () => gracefulShutdown('SIGINT'));

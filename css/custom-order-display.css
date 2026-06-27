@@ -1,0 +1,546 @@
+/* ═════════════════════════════════════════════════════════════
+   CUSTOM ORDER DISPLAY - SEPARATE DESIGN CONTAINERS
+   ═════════════════════════════════════════════════════════════ */
+
+.co-display-wrapper {
+  width: 100%;
+  max-width: 100%;
+  padding: 0;
+  background: #f9f9f9;
+}
+
+/* ─────────────────────────────────────
+   ORDER HEADER
+   ───────────────────────────────────── */
+.co-order-header {
+  background: linear-gradient(135deg, #1f1f1f 0%, #2a2a2a 100%);
+  color: white;
+  padding: 2rem;
+  border-radius: 8px 8px 0 0;
+  margin-bottom: 2rem;
+}
+
+.co-order-header h2 {
+  margin: 0 0 1.5rem 0;
+  font-size: 1.5rem;
+  font-weight: 600;
+}
+
+.co-order-meta {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 1rem;
+}
+
+.co-meta-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  font-size: 0.9rem;
+}
+
+.co-meta-item strong {
+  font-weight: 600;
+  color: #e5e7eb;
+}
+
+/* ─────────────────────────────────────
+   DESIGNS GRID - PREVENT OVERLAP
+   ───────────────────────────────────── */
+.co-designs-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+  gap: 2rem;
+  padding: 2rem;
+  background: #f9f9f9;
+}
+
+/* ─────────────────────────────────────
+   DESIGN CARD - ISOLATED CONTAINER
+   ───────────────────────────────────── */
+.co-design-card {
+  display: flex;
+  flex-direction: column;
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  cursor: pointer;
+  height: 100%;
+}
+
+.co-design-card:hover {
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+  transform: translateY(-2px);
+}
+
+.co-design-card--selected {
+  border-color: #1f1f1f;
+  box-shadow: 0 0 0 3px rgba(31, 31, 31, 0.1), 0 8px 20px rgba(0, 0, 0, 0.12);
+}
+
+/* Card Header */
+.co-design-card__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.25rem;
+  border-bottom: 1px solid #f0f0f0;
+  background: #fafafa;
+}
+
+.co-design-card__title {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #1f1f1f;
+}
+
+.co-design-card__status {
+  display: inline-block;
+  font-size: 0.75rem;
+  padding: 0.4rem 0.8rem;
+  border-radius: 20px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.co-design-card__status[data-status="pending"] {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.co-design-card__status[data-status="approved"] {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.co-design-card__status[data-status="rejected"] {
+  background: #fee2e2;
+  color: #7f1d1d;
+}
+
+/* Preview Area - Container for garment + design */
+.co-design-card__preview-wrapper {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 3 / 4;
+  background: #f5f5f5;
+  padding: 1rem;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.co-design-card__garment-bg {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: white;
+  top: 0;
+  left: 0;
+  z-index: 1;
+}
+
+.co-design-card__garment-img {
+  width: 90%;
+  height: 90%;
+  object-fit: contain;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
+}
+
+/* Design Overlay - Absolute positioning within preview container */
+.co-design-card__design-overlay {
+  position: absolute;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transform-origin: center;
+  transition: all 0.2s ease;
+  pointer-events: auto;
+}
+
+.co-design-card__design-img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.2));
+}
+
+/* Info Section */
+.co-design-card__info {
+  padding: 1.25rem;
+  border-top: 1px solid #f0f0f0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  background: #fbfbfb;
+  flex-grow: 1;
+}
+
+.co-design-card__info-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.85rem;
+  padding: 0.5rem 0;
+}
+
+.co-design-card__label {
+  font-weight: 600;
+  color: #666;
+  min-width: 100px;
+}
+
+.co-design-card__value {
+  color: #1f1f1f;
+  font-family: 'Courier New', monospace;
+  font-size: 0.8rem;
+}
+
+/* Action Buttons */
+.co-design-card__actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 0.75rem;
+  padding: 1rem;
+  border-top: 1px solid #f0f0f0;
+  background: #fafafa;
+}
+
+.co-design-btn {
+  padding: 0.6rem 0.75rem;
+  border: 1px solid #d1d5db;
+  background: white;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-weight: 500;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.co-design-btn:hover {
+  background: #f3f4f6;
+  border-color: #1f1f1f;
+  color: #1f1f1f;
+}
+
+.co-design-btn--edit {
+  background: #f0f9ff;
+  border-color: #0ea5e9;
+  color: #0369a1;
+}
+
+.co-design-btn--edit:hover {
+  background: #e0f2fe;
+}
+
+.co-design-btn--preview {
+  background: #f0fdf4;
+  border-color: #22c55e;
+  color: #15803d;
+}
+
+.co-design-btn--preview:hover {
+  background: #dcfce7;
+}
+
+.co-design-btn--delete {
+  background: #fef2f2;
+  border-color: #ef4444;
+  color: #b91c1c;
+}
+
+.co-design-btn--delete:hover {
+  background: #fee2e2;
+}
+
+/* ─────────────────────────────────────
+   SUMMARY SECTION
+   ───────────────────────────────────── */
+.co-designs-summary {
+  padding: 2rem;
+  background: white;
+  border-top: 1px solid #e5e7eb;
+  border-radius: 0 0 8px 8px;
+}
+
+.co-designs-summary h3 {
+  margin: 0 0 1.5rem 0;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #1f1f1f;
+}
+
+.co-summary-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 1rem;
+}
+
+.co-summary-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem 1rem;
+  background: #f9f9f9;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  font-size: 0.9rem;
+}
+
+.co-summary-side {
+  font-weight: 600;
+  color: #1f1f1f;
+}
+
+.co-summary-status {
+  display: inline-block;
+  padding: 0.25rem 0.75rem;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.co-summary-status--pending {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.co-summary-status--approved {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.co-summary-status--rejected {
+  background: #fee2e2;
+  color: #7f1d1d;
+}
+
+/* ─────────────────────────────────────
+   EMPTY STATE
+   ───────────────────────────────────── */
+.co-empty-state {
+  padding: 4rem 2rem;
+  text-align: center;
+  background: white;
+  border-radius: 8px;
+  color: #999;
+}
+
+.co-empty-state p {
+  margin: 0;
+  font-size: 1.1rem;
+}
+
+/* ═════════════════════════════════════════════════════════════
+   RESPONSIVE DESIGN - MOBILE & TABLET
+   ═════════════════════════════════════════════════════════════ */
+
+/* Tablet (768px and below) */
+@media (max-width: 768px) {
+  .co-order-header {
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .co-order-header h2 {
+    font-size: 1.25rem;
+    margin-bottom: 1rem;
+  }
+
+  .co-order-meta {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.75rem;
+  }
+
+  .co-designs-grid {
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 1.5rem;
+    padding: 1.5rem;
+  }
+
+  .co-design-card {
+    border-radius: 10px;
+  }
+
+  .co-design-card__header {
+    padding: 1rem;
+  }
+
+  .co-design-card__title {
+    font-size: 0.95rem;
+  }
+
+  .co-design-card__preview-wrapper {
+    aspect-ratio: 3 / 4;
+    padding: 0.75rem;
+  }
+
+  .co-design-card__info {
+    padding: 1rem;
+    gap: 0.5rem;
+  }
+
+  .co-design-card__actions {
+    padding: 0.75rem;
+    gap: 0.5rem;
+  }
+
+  .co-design-btn {
+    padding: 0.5rem 0.5rem;
+    font-size: 0.7rem;
+  }
+
+  .co-summary-list {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Mobile (480px and below) */
+@media (max-width: 480px) {
+  .co-display-wrapper {
+    padding: 0;
+  }
+
+  .co-order-header {
+    padding: 1rem;
+    margin-bottom: 1rem;
+    border-radius: 0;
+  }
+
+  .co-order-header h2 {
+    font-size: 1.1rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .co-order-meta {
+    grid-template-columns: 1fr;
+    gap: 0.5rem;
+  }
+
+  .co-meta-item {
+    flex-direction: row;
+    justify-content: space-between;
+  }
+
+  .co-designs-grid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+    padding: 1rem;
+  }
+
+  .co-design-card {
+    border-radius: 8px;
+  }
+
+  .co-design-card__header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+    padding: 0.9rem;
+  }
+
+  .co-design-card__status {
+    align-self: flex-end;
+  }
+
+  .co-design-card__preview-wrapper {
+    aspect-ratio: 3 / 4;
+    padding: 0.5rem;
+  }
+
+  .co-design-card__info {
+    padding: 0.9rem;
+    gap: 0.4rem;
+  }
+
+  .co-design-card__info-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.25rem;
+  }
+
+  .co-design-card__actions {
+    grid-template-columns: 1fr;
+    padding: 0.75rem;
+    gap: 0.5rem;
+  }
+
+  .co-design-btn {
+    padding: 0.6rem;
+    font-size: 0.7rem;
+    width: 100%;
+  }
+
+  .co-designs-summary {
+    padding: 1rem;
+    border-radius: 0;
+  }
+
+  .co-designs-summary h3 {
+    font-size: 1rem;
+    margin-bottom: 1rem;
+  }
+
+  .co-summary-list {
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
+  }
+
+  .co-summary-item {
+    padding: 0.6rem 0.75rem;
+    font-size: 0.85rem;
+  }
+}
+
+/* Extra small (360px and below) */
+@media (max-width: 360px) {
+  .co-order-meta {
+    gap: 0.25rem;
+  }
+
+  .co-meta-item {
+    font-size: 0.8rem;
+  }
+
+  .co-design-card__info-row {
+    font-size: 0.75rem;
+  }
+
+  .co-design-btn {
+    padding: 0.5rem;
+    font-size: 0.65rem;
+  }
+}
+
+/* ─────────────────────────────────────
+   PRINT STYLES
+   ───────────────────────────────────── */
+@media print {
+  .co-design-card {
+    page-break-inside: avoid;
+    box-shadow: none;
+    border: 1px solid #ccc;
+  }
+
+  .co-design-card__actions {
+    display: none;
+  }
+
+  .co-design-btn {
+    display: none;
+  }
+}

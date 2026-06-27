@@ -1,0 +1,16 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: aizo-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: aizo
+      POSTGRES_PASSWORD: CHANGE_THIS_STRONG_PASSWORD
+      POSTGRES_DB: aizo_dz
+    ports:
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+volumes:
+  pgdata:

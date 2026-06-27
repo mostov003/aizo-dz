@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="ar">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>اختبار نظام Workflow</title>
+  <style>
+    body { font-family: Arial; padding: 20px; background: #f5f5f5; }
+    h1 { color: #333; }
+    .test-section { background: white; padding: 20px; margin: 10px 0; border-radius: 5px; }
+    .status { padding: 10px; margin: 5px 0; border-left: 4px solid #999; }
+    .status.pending { border-left-color: #ff9800; background: #fff3e0; }
+    .status.attente { border-left-color: #2196f3; background: #e3f2fd; }
+    .status.confirme { border-left-color: #4caf50; background: #e8f5e9; }
+    .status.livr { border-left-color: #4caf50; background: #c8e6c9; }
+    button { padding: 8px 16px; margin: 5px; border: none; border-radius: 4px; cursor: pointer; font-size: 14px; }
+    .btn-accept { background: #4caf50; color: white; }
+    .btn-accept:hover { background: #45a049; }
+    .btn-reject { background: #f44336; color: white; }
+    .btn-reject:hover { background: #da190b; }
+    .btn-confirm { background: #2196f3; color: white; }
+    .btn-confirm:hover { background: #0b7dda; }
+    .btn-shipped { background: #ff9800; color: white; }
+    .btn-shipped:hover { background: #e68900; }
+    .btn-notshipped { background: #9c27b0; color: white; }
+    .btn-notshipped:hover { background: #7b1fa2; }
+    .result { padding: 10px; background: #e8f5e9; border-left: 4px solid #4caf50; margin: 10px 0; }
+    .error { padding: 10px; background: #ffebee; border-left: 4px solid #f44336; margin: 10px 0; }
+    code { background: #f0f0f0; padding: 2px 6px; border-radius: 3px; font-family: monospace; }
+  </style>
+</head>
+<body>
+  <h1>🔄 اختبار نظام Workflow (Order Status Workflow Test)</h1>
+  
+  <div class="test-section">
+    <h2>الخطوة 1: قبول الطلب (Accept Order)</h2>
+    <p>الحالة الحالية: <span style="background: #fff3e0; padding: 5px 10px;">قيد الانتظار (Pending)</span></p>
+    <p>الخيارات المتاحة: قبول / رفض</p>
+    <button class="btn-accept" onclick="testWorkflow('accept')">✓ قبول (Accept)</button>
+    <button class="btn-reject" onclick="testWorkflow('reject')">✗ رفض (Reject)</button>
+    <div id="result1"></div>
+  </div>
+
+  <div class="test-section">
+    <h2>الخطوة 2: تأكيد الطلب (Confirm Order)</h2>
+    <p>الحالة بعد القبول: <span style="background: #e3f2fd; padding: 5px 10px;">في الانتظار (en attente)</span></p>
+    <p>الخيارات المتاحة: تأكيد / إلغاء</p>
+    <button class="btn-confirm" onclick="testWorkflow('confirm')">✓ تأكيد (Confirm)</button>
+    <button class="btn-reject" onclick="testWorkflow('cancel')">✗ إلغاء (Cancel)</button>
+    <div id="result2"></div>
+  </div>
+
+  <div class="test-section">
+    <h2>الخطوة 3: الشحن (Shipping)</h2>
+    <p>الحالة بعد التأكيد: <span style="background: #e8f5e9; padding: 5px 10px;">مؤكد (confirmé)</span></p>
+    <p>الخيارات المتاحة: تم الشحن / لم يتم الشحن</p>
+    <button class="btn-shipped" onclick="testWorkflow('shipped')">✅ تم الشحن (Shipped)</button>
+    <button class="btn-notshipped" onclick="testWorkflow('notshipped')">📦 لم يتم الشحن (Not Shipped)</button>
+    <div id="result3"></div>
+  </div>
+
+  <div class="test-section">
+    <h2>📊 ملخص Workflow</h2>
+    <div class="status pending">
+      <strong>الحالة 1 - Pending:</strong> يتم عرض أزرار (قبول / رفض)
+    </div>
+    <div class="status attente">
+      <strong>الحالة 2 - en attente:</strong> يتم عرض أزرار (تأكيد / إلغاء)
+    </div>
+    <div class="status confirme">
+      <strong>الحالة 3 - confirmé:</strong> يتم عرض أزرار (شحن / عدم شحن)
+    </div>
+    <div class="status livr">
+      <strong>الحالات النهائية:</strong> livré / retourné / annulé - لا توجد خيارات إضافية
+    </div>
+  </div>
+
+  <div class="test-section">
+    <h2>🔍 الحالات المختبرة</h2>
+    <div id="testResults"></div>
+  </div>
+
+  <script>
+    let testLog = [];
+    
+    function testWorkflow(action) {
+      const timestamp = new Date().toLocaleTimeString('ar-SA');
+      let result = { action, timestamp, status: '' };
+      
+      const resultDiv = document.getElementById('testResults');
+      
+      if (action === 'accept') {
+        result.status = 'قبول الطلب - سيتم نقل الطلب إلى en attente';
+      } else if (action === 'reject') {
+        result.status = 'رفض الطلب - سيتم نقل الطلب إلى annulé';
+      } else if (action === 'confirm') {
+        result.status = 'تأكيد الطلب - سيتم نقل الطلب إلى confirmé';
+      } else if (action === 'cancel') {
+        result.status = 'إلغاء الطلب - سيتم نقل الطلب إلى annulé';
+      } else if (action === 'shipped') {
+        result.status = 'شحن الطلب - سيتم نقل الطلب إلى livré';
+      } else if (action === 'notshipped') {
+        result.status = 'عدم شحن - سيتم نقل الطلب إلى retourné';
+      }
+      
+      testLog.push(result);
+      
+      const logHTML = testLog.map((log, idx) => 
+        `<div class="result"><strong>${idx + 1}.</strong> [${log.timestamp}] ${log.action}: ${log.status}</div>`
+      ).join('');
+      
+      resultDiv.innerHTML = logHTML;
+      
+      console.log('✓ Test workflow:', result);
+    }
+    
+    // Auto-log on page load
+    window.addEventListener('load', () => {
+      console.log('✓ نظام الاختبار جاهز');
+      console.log('✓ Workflow system test page loaded');
+    });
+  </script>
+</body>
+</html>

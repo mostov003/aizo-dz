@@ -1,0 +1,26 @@
+{
+  "name": "aizo-dz",
+  "version": "1.0.0",
+  "description": "aizo.dz - Premium minimalist store",
+  "main": "server.js",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "scripts": {
+    "start": "node server.js",
+    "start:pm2": "pm2 start ecosystem.config.cjs",
+    "dev": "node server.js",
+    "build:client": "cd client && npm install && npm run build",
+    "prisma:deploy": "npx prisma db push --schema=./prisma/schema.prisma",
+    "deploy": "npm run build:client && npm run prisma:deploy",
+    "postinstall": "npm install --prefix client"
+  },
+  "dependencies": {
+    "@prisma/client": "^7.8.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.6.1",
+    "express": "^4.19.2",
+    "pg": "^8.22.0",
+    "prisma": "^7.8.0"
+  }
+}
