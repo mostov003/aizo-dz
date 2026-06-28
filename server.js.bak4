@@ -20,7 +20,6 @@ process.on('unhandledRejection', (reason, promise) => {
 const config = require('./config');
 
 const app = express();
-app.set('trust proxy', 1); // we're behind Nginx (one hop) — needed for express-rate-limit and req.ip to work correctly
 const PORT = config.port;
 
 // Middleware
@@ -47,34 +46,6 @@ app.use(cors({
 // Set a larger limit to support base64 mockup uploads
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
-
-const helmet = require('helmet');
-const rateLimit = require('express-rate-limit');
-
-app.use(helmet({
-  contentSecurityPolicy: false,       // the site relies on many inline scripts; a strict CSP would break it
-  crossOriginResourcePolicy: false    // uploads/ images need cross-origin loading for the Fabric.js canvas
-}));
-
-// Strict limiter on the admin login endpoint — blocks password brute-forcing
-const loginLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 8,
-  standardHeaders: true,
-  legacyHeaders: false,
-  message: { success: false, error: 'Too many login attempts. Try again in 15 minutes.' }
-});
-app.use('/api/admin/login', loginLimiter);
-
-// General limiter on all API routes — blocks spam/abuse on public endpoints (orders, leads, etc.)
-const apiLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 600,
-  standardHeaders: true,
-  legacyHeaders: false,
-  message: { success: false, error: 'Too many requests. Please slow down.' }
-});
-app.use('/api/', apiLimiter);
 
 // Vue build is intentionally NOT served — the static site at the project root is the live frontend.
 
@@ -105,11 +76,6 @@ const PUBLIC_ROOT_FOLDERS = ['css', 'js', 'img'];
 app.use((req, res, next) => {
   const cleanPath = req.path.replace(/^\/+/, '');
   const firstSegment = cleanPath.split('/')[0];
-
-  // Let API requests through untouched — they're handled by their own routes/auth further down
-  if (firstSegment === 'api') {
-    return next();
-  }
 
   if (HTML_REDIRECTS[cleanPath]) {
     const qs = req.url.includes('?') ? req.url.slice(req.url.indexOf('?')) : '';
@@ -219,36 +185,17 @@ function saveBase64Image(base64Str, prefix, orderId, suffix) {
   try {
     const commaIdx = base64Str.indexOf(',');
     if (commaIdx === -1) return base64Str;
-
+    
     const meta = base64Str.substring(0, commaIdx);
     const data = base64Str.substring(commaIdx + 1);
-
+    
     const mimeMatch = meta.match(/^data:([^;]+);base64$/);
-    const rawExt = mimeMatch ? mimeMatch[1].split('/')[1] : 'png';
-
-    // Only allow known-safe image extensions, no matter what the client claims
-    const ALLOWED_EXTENSIONS = ['png', 'jpg', 'jpeg', 'webp', 'gif'];
-    const ext = ALLOWED_EXTENSIONS.includes((rawExt || '').toLowerCase()) ? rawExt.toLowerCase() : 'png';
-
+    const ext = mimeMatch ? mimeMatch[1].split('/')[1] : 'png';
+    
     const buffer = Buffer.from(data, 'base64');
-
-    // Reject unreasonably large single images (15MB) to prevent disk-filling abuse
-    if (buffer.length > 15 * 1024 * 1024) {
-      console.warn('⚠️ Rejected oversized image upload');
-      return null;
-    }
-
-    // Sanitize orderId/suffix: strip anything that isn't a safe filename character
-    const safe = (v) => String(v).replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 64) || 'x';
-    const filename = `${prefix}-${safe(orderId)}${suffix !== undefined && suffix !== null && suffix !== '' ? '-' + safe(suffix) : ''}.${ext}`;
+    const filename = `${prefix}-${orderId}${suffix !== undefined && suffix !== null && suffix !== '' ? '-' + suffix : ''}.${ext}`;
     const filePath = path.join(UPLOADS_DIR, filename);
-
-    // Defense in depth: confirm the resolved path is still inside UPLOADS_DIR
-    if (!filePath.startsWith(UPLOADS_DIR)) {
-      console.error('❌ Blocked a path-traversal attempt in an uploaded filename');
-      return null;
-    }
-
+    
     fs.writeFileSync(filePath, buffer);
     console.log(`💾 Saved custom order asset: ${filename}`);
     return `/uploads/${filename}`;
@@ -701,49 +648,6 @@ async function createZRShipment(order) {
     return { zrParcelId, trackingNumber };
   }
 }
-
-// ╔════════════════════════════════════════════════════════════╗
-// ║              Admin Authentication Middleware                ║
-// ╚════════════════════════════════════════════════════════════╗
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
-
-if (!ADMIN_PASSWORD) {
-  console.warn('⚠️  ADMIN_PASSWORD is not set in .env — all admin routes will be blocked until you set it.');
-}
-
-const PUBLIC_API_ROUTES = [
-  { method: 'GET',  path: /^\/api\/products$/ },
-  { method: 'GET',  path: /^\/api\/custom-products$/ },
-  { method: 'GET',  path: /^\/api\/default-products$/ },
-  { method: 'GET',  path: /^\/api\/stocks$/ },
-  { method: 'GET',  path: /^\/api\/product-stocks$/ },
-  { method: 'GET',  path: /^\/api\/default-overrides$/ },
-  { method: 'GET',  path: /^\/api\/health$/ },
-  { method: 'POST', path: /^\/api\/orders$/ },
-  { method: 'POST', path: /^\/api\/leads$/ },
-  { method: 'POST', path: /^\/api\/admin\/login$/ },
-];
-
-app.use((req, res, next) => {
-  if (!req.path.startsWith('/api')) return next();
-
-  const isPublic = PUBLIC_API_ROUTES.some(r => r.method === req.method && r.path.test(req.path));
-  if (isPublic) return next();
-
-  const supplied = req.headers['x-admin-password'];
-  if (!ADMIN_PASSWORD || supplied !== ADMIN_PASSWORD) {
-    return res.status(401).json({ success: false, error: 'Unauthorized — admin login required' });
-  }
-  next();
-});
-
-app.post('/api/admin/login', (req, res) => {
-  const { password } = req.body || {};
-  if (ADMIN_PASSWORD && password === ADMIN_PASSWORD) {
-    return res.json({ success: true });
-  }
-  res.status(401).json({ success: false, error: 'Incorrect password' });
-});
 
 // ╔════════════════════════════════════════════════════════════╗
 // ║                API Routes - Orders                         ║
@@ -1433,7 +1337,8 @@ app.post('/api/default-overrides', async (req, res) => {
 app.post('/api/orders/:id/sync-zr', async (req, res) => {
   try {
     const { id } = req.params;
-    const order = await getOrderById(id);
+    const orders = await readJSONCached(ORDERS_FILE);
+    const order = orders.find(o => String(o.id) === String(id));
 
     if (!order) {
       return res.status(404).json({ success: false, error: `Order #${id} not found` });
@@ -1484,14 +1389,15 @@ app.post('/api/orders/:id/sync-zr', async (req, res) => {
       order.status = 'Confirmed'; // Keep it Confirmed while in transit
     }
 
-    const updatedOrder = await updateOrderShipping(id, {
-      trackingNumber: order.trackingNumber,
-      zrParcelId: order.zrParcelId,
-      zrStatus: order.zrStatus
-    });
-    await updateOrderStatus(id, order.status);
+    order.lastSyncedAt = new Date().toISOString();
 
-    res.json({ success: true, order: { ...updatedOrder, status: order.status }, zrData });
+    const orderIdx = orders.findIndex(o => String(o.id) === String(id));
+    if (orderIdx > -1) {
+      orders[orderIdx] = order;
+      await writeJSONCached(ORDERS_FILE, orders);
+    }
+
+    res.json({ success: true, order, zrData });
   } catch (err) {
     console.error(`Error syncing ZR:`, err.message);
     res.status(500).json({ success: false, error: err.message });
@@ -1592,62 +1498,6 @@ async function zrKeepAlivePing() {
 // Start keep-alive pings after server starts
 keepAliveTimer = setInterval(zrKeepAlivePing, ZR_KEEPALIVE_INTERVAL);
 console.log(`🏓 ZR Express Keep-Alive: Running every ${ZR_KEEPALIVE_INTERVAL / 60000} minutes`);
-
-// ZR Express Auto-Status-Sync: periodically check active shipments and update their status
-const ZR_AUTO_SYNC_INTERVAL = 30 * 60 * 1000; // 30 minutes
-const TERMINAL_STATUSES = ['Delivered', 'Returned', 'Cancelled', 'livré', 'retourné', 'annulé'];
-
-async function autoSyncZRStatuses() {
-  try {
-    const orders = await getAllOrders();
-    const active = orders.filter(o => o.zrParcelId && !TERMINAL_STATUSES.includes(o.status));
-    if (active.length === 0) return;
-
-    console.log(`🔄 Auto-sync: checking ${active.length} active ZR shipment(s)...`);
-
-    for (const order of active) {
-      try {
-        const syncRes = await fetch(`${ZR_BASE_URL}/parcels/${order.zrParcelId}`, {
-          method: 'GET',
-          headers: { 'X-Tenant': ZR_TENANT_ID, 'X-Api-Key': ZR_SECRET_KEY },
-          signal: AbortSignal.timeout(10000)
-        });
-        if (!syncRes.ok) continue;
-
-        const zrData = await syncRes.json();
-        const zrState = zrData.status?.state || zrData.status || 'OrderReceived';
-        const zrSituation = zrData.status?.situation || '';
-        const zrStatus = { state: zrState, situation: zrSituation };
-
-        let mappedStatus;
-        if (zrState === 'Delivered') mappedStatus = 'Delivered';
-        else if (['Returned', 'ReturnReceived', 'ReturnCreated'].includes(zrState)) mappedStatus = 'Returned';
-        else if (zrState === 'Cancelled') mappedStatus = 'Cancelled';
-        else mappedStatus = 'Confirmed';
-
-        await updateOrderShipping(order.id, {
-          trackingNumber: order.trackingNumber,
-          zrParcelId: order.zrParcelId,
-          zrStatus
-        });
-
-        if (mappedStatus !== order.status) {
-          await updateOrderStatus(order.id, mappedStatus);
-          console.log(`  ↻ Order #${order.id}: ${order.status} → ${mappedStatus}`);
-        }
-      } catch (err) {
-        console.warn(`  ⚠️ Auto-sync failed for order #${order.id}: ${err.message}`);
-      }
-      await new Promise(r => setTimeout(r, 300)); // be gentle with ZR's API
-    }
-  } catch (err) {
-    console.error('❌ Auto-sync ZR statuses failed:', err.message);
-  }
-}
-
-setInterval(autoSyncZRStatuses, ZR_AUTO_SYNC_INTERVAL);
-console.log(`🔄 ZR Auto-Status-Sync: Running every ${ZR_AUTO_SYNC_INTERVAL / 60000} minutes`);
-setTimeout(autoSyncZRStatuses, 60 * 1000); // also run shortly after startup
 
 // ╔════════════════════════════════════════════════════════════╗
 // ║              Graceful Shutdown Handler                      ║

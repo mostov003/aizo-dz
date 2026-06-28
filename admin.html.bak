@@ -3,21 +3,6 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <script>
-    (function() {
-      var _originalFetch = window.fetch;
-      window.fetch = function(input, init) {
-        init = init || {};
-        var url = (typeof input === 'string') ? input : (input && input.url) || '';
-        if (url.indexOf('/api/') !== -1) {
-          var headers = new Headers(init.headers || {});
-          headers.set('X-Admin-Password', sessionStorage.getItem('admin_password') || '');
-          init.headers = headers;
-        }
-        return _originalFetch.call(this, input, init);
-      };
-    })();
-  </script>
   <title>لوحة التحكم — aizo.dz</title>
   
   <!-- Fonts -->
@@ -638,43 +623,29 @@
       var pwdInput = document.getElementById('admin-password');
       var pwd = pwdInput ? pwdInput.value.trim() : '';
       var loginError = document.getElementById('login-error');
-      fetch((window.API_BASE_URL || '') + '/api/admin/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ password: pwd })
-      })
-        .then(function(res) { return res.json(); })
-        .then(function(data) {
-          if (data.success) {
-            sessionStorage.setItem('admin_logged_in', 'true');
-            sessionStorage.setItem('admin_password', pwd);
-            if (loginError) loginError.classList.remove('show');
-            if (pwdInput) pwdInput.style.borderColor = '';
-            if (typeof window.showDashboard === 'function') {
-              window.showDashboard();
-            } else {
-              window.location.reload();
-            }
-          } else {
-            if (loginError) {
-              loginError.textContent = (window.t && window.t('admin_login_error')) || 'الرمز السري غير صحيح!';
-              loginError.classList.add('show');
-            }
-            if (pwdInput) pwdInput.style.borderColor = '#ef4444';
-          }
-        })
-        .catch(function() {
-          if (loginError) {
-            loginError.textContent = 'خطأ في الاتصال بالسيرفر';
-            loginError.classList.add('show');
-          }
-        });
+      if (pwd === 'giga999') {
+        sessionStorage.setItem('admin_logged_in', 'true');
+        if (loginError) loginError.classList.remove('show');
+        if (pwdInput) pwdInput.style.borderColor = '';
+        if (typeof window.showDashboard === 'function') {
+          window.showDashboard();
+        } else {
+          window.location.reload();
+        }
+      } else {
+        if (loginError) {
+          loginError.textContent = (window.t && window.t('admin_login_error')) || 'الرمز السري غير صحيح!';
+          loginError.classList.add('show');
+        }
+        if (pwdInput) pwdInput.style.borderColor = '#ef4444';
+      }
     };
   </script>
   <!-- Central API Config (MUST be first) -->
   <script src="js/config.js"></script>
   <script src="js/products.js"></script>
   <script src="js/i18n.js"></script>
+  <script src="js/sync.js"></script>
   <script>
     // Sidebar toggle handler (mobile) — also toggle nav/footer display for reliability
     document.addEventListener('DOMContentLoaded', function() {
@@ -3862,40 +3833,24 @@
         loginForm.addEventListener('submit', function(e) {
           e.preventDefault();
           var pwd = pwdInput ? pwdInput.value.trim() : '';
-          fetch((window.API_BASE_URL || '') + '/api/admin/login', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ password: pwd })
-          })
-            .then(function(res) { return res.json(); })
-            .then(function(data) {
-              if (data.success) {
-                sessionStorage.setItem('admin_logged_in', 'true');
-                sessionStorage.setItem('admin_password', pwd);
-                if (loginError) loginError.classList.remove('show');
-                if (pwdInput)   pwdInput.style.borderColor = '';
-                showDashboard();
-              } else {
-                if (loginError) {
-                  loginError.textContent = (window.t && window.t('admin_login_error')) || 'الرمز السري غير صحيح!';
-                  loginError.classList.add('show');
-                }
-                if (pwdInput)   pwdInput.style.borderColor = '#ef4444';
-              }
-            })
-            .catch(function() {
-              if (loginError) {
-                loginError.textContent = 'خطأ في الاتصال بالسيرفر';
-                loginError.classList.add('show');
-              }
-            });
+          if (pwd === 'giga999') {
+            sessionStorage.setItem('admin_logged_in', 'true');
+            if (loginError) loginError.classList.remove('show');
+            if (pwdInput)   pwdInput.style.borderColor = '';
+            showDashboard();
+          } else {
+            if (loginError) {
+              loginError.textContent = (window.t && window.t('admin_login_error')) || 'الرمز السري غير صحيح!';
+              loginError.classList.add('show');
+            }
+            if (pwdInput)   pwdInput.style.borderColor = '#ef4444';
+          }
         });
       }
 
       if (logoutBtn) {
         logoutBtn.addEventListener('click', function() {
           sessionStorage.removeItem('admin_logged_in');
-          sessionStorage.removeItem('admin_password');
           window.location.reload();
         });
       }

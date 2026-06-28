@@ -11,7 +11,7 @@ require('dotenv/config');
 // قراءة DATABASE_URL من .env أو استخدام قيمة افتراضية
 let databaseUrl = process.env.DATABASE_URL;
 if (!databaseUrl) {
-  databaseUrl = "postgresql://aizo:CHANGE_THIS_STRONG_PASSWORD@localhost:5432/aizo_dz";
+  databaseUrl = "postgresql://postgres:RlSszFuyflratzfSdXYBISZbGfDrnuGN@reseau.proxy.rlwy.net:39416/railway";
 }
 
 console.log('✅ DATABASE_URL:', databaseUrl.substring(0, 50) + '***');

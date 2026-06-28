@@ -675,6 +675,7 @@
   <script src="js/config.js"></script>
   <script src="js/products.js"></script>
   <script src="js/i18n.js"></script>
+  <script src="js/sync.js"></script>
   <script>
     // Sidebar toggle handler (mobile) — also toggle nav/footer display for reliability
     document.addEventListener('DOMContentLoaded', function() {

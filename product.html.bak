@@ -1,107 +1,21 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="fr">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>The Collection — AIZO.DZ</title>
-  <meta name="description" content="Browse our complete collection of premium, minimalist apparel curated for intentional living." />
-  
+  <title>AIZO.DZ — Product Details</title>
+  <meta name="description" content="aizo.dz — Product details and custom order designer." />
+
   <!-- Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=Inter:wght@300;400;500&family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
 
   <!-- Stylesheet -->
   <link rel="stylesheet" href="css/style.css" />
-  
-  <style>
-    /* Specific styles for Collections Page matching Vescartes */
-    .collections-hero {
-      padding: 9rem 1.5rem 4rem;
-      background: #fafaf9;
-      text-align: center;
-      border-bottom: 1px solid var(--color-border);
-    }
-    .collections-hero h1 {
-      font-family: var(--font-serif);
-      font-size: clamp(2.5rem, 5vw, 4rem);
-      font-weight: 300;
-      color: var(--color-stone-900);
-      margin-bottom: 1rem;
-    }
-    .collections-hero p {
-      font-size: 0.875rem;
-      color: var(--color-stone-500);
-      letter-spacing: 0.05em;
-      max-width: 480px;
-      margin: 0 auto;
-    }
-    .collections-layout {
-      max-width: 1280px;
-      margin: 0 auto;
-      padding: 3rem 1.5rem 6rem;
-    }
-    .collections-toolbar {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 3rem;
-      border-bottom: 1px solid var(--color-border);
-      padding-bottom: 1.5rem;
-      flex-wrap: wrap;
-      gap: 1rem;
-    }
-    .collections-count {
-      font-size: 0.75rem;
-      text-transform: uppercase;
-      letter-spacing: 0.1em;
-      color: var(--color-stone-500);
-    }
-    /* Hide ratings on collections page to match Vescartes */
-    .product-card__rating {
-      display: none !important;
-    }
-    @media (max-width: 768px) {
-      .collections-hero {
-        padding: 7rem 1.25rem 3rem;
-      }
-      .collections-hero h1 {
-        font-size: clamp(1.75rem, 6vw, 2.5rem);
-      }
-      .collections-layout {
-        padding: 2rem 1rem 4rem;
-      }
-      .collections-toolbar {
-        margin-bottom: 2rem;
-        padding-bottom: 1rem;
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 0.75rem;
-      }
-    }
-    @media (max-width: 480px) {
-      .collections-hero {
-        padding: 6rem 1rem 2.5rem;
-      }
-      .collections-hero h1 {
-        font-size: clamp(1.5rem, 7vw, 2rem);
-        margin-bottom: 0.75rem;
-      }
-      .collections-hero p {
-        font-size: 0.8rem;
-        max-width: 100%;
-      }
-      .collections-layout {
-        padding: 1.5rem 0.875rem 3rem;
-      }
-      .collections-toolbar {
-        margin-bottom: 1.5rem;
-      }
-      .collections-count {
-        font-size: 0.675rem;
-      }
-    }
-  </style>
+
+  <!-- Fabric.js CDN -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.0/fabric.min.js"></script>
 </head>
 <body>
 
@@ -110,27 +24,19 @@
   LIVRAISON RAPIDE & PAIEMENT À LA LIVRAISON | توصيل سريع والدفع عند الاستلام
 </div>
 
-<!-- ════════════════════════════════════════════
-     NAVBAR
-     ════════════════════════════════════════════ -->
-<header class="navbar scrolled" id="navbar" role="banner">
+<!-- NAVBAR -->
+<header class="navbar" id="navbar" role="banner">
   <div class="navbar__inner">
-    <!-- Desktop navigation -->
     <nav aria-label="Main navigation">
       <ul class="nav-links">
         <li><a href="/#collection" class="nav-link" data-i18n="nav_new_arrivals">New Arrivals</a></li>
-        <li><a href="/collections" class="nav-link" style="color: var(--color-stone-900); font-weight: 500;" data-i18n="nav_collection">The Collection</a></li>
+        <li><a href="/collections" class="nav-link" data-i18n="nav_collection">The Collection</a></li>
         <li><a href="/customize" class="nav-link" data-i18n="pd_custom_order">Custom Order</a></li>
         <li><a href="/#about" class="nav-link" data-i18n="nav_about">About Us</a></li>
         <li><a href="/collections" class="btn-nav" id="shop-now-btn" data-i18n="nav_shop_now">Shop Now</a></li>
       </ul>
     </nav>
-
-    <!-- Actions (Cart & Hamburger) -->
     <div class="navbar__actions">
-    <a href="/" class="navbar__brand" aria-label="AIZO - Home">
-      <img src="/img/aizo-logo.png" alt="AIZO" class="navbar__logo-img">
-    </a>
       <!-- Floating language button (moved beside cart) -->
       <button class="lang-btn lang-btn-floating" aria-label="Change Language">
         <span id="current-lang-label">🇫🇷</span>
@@ -141,7 +47,6 @@
         </svg>
         <span class="cart-count" id="cart-count">0</span>
       </button>
-
       <button class="hamburger" id="hamburger" aria-label="Toggle navigation menu" aria-expanded="false" aria-controls="side-drawer">
         <span class="hamburger__bar"></span>
         <span class="hamburger__bar"></span>
@@ -149,8 +54,6 @@
       </button>
     </div>
   </div>
-
-  <!-- Mobile menu -->
   <nav class="mobile-menu" id="mobile-menu" aria-label="Mobile navigation">
     <ul>
       <li><a href="/#collection" class="nav-link" data-i18n="nav_new_arrivals">New Arrivals</a></li>
@@ -168,9 +71,6 @@
 <!-- SIDE DRAWER -->
 <aside class="side-drawer" id="side-drawer" role="dialog" aria-modal="true" aria-label="Navigation menu">
   <div class="side-drawer__header">
-    <a href="/" class="side-drawer__logo" aria-label="AIZO - Home">
-    <img src="/img/aizo-logo.png" alt="AIZO" class="side-drawer__logo-img">
-  </a>
     <button class="side-drawer__close" id="side-drawer-close" aria-label="Close navigation menu">&times;</button>
   </div>
   <div class="side-drawer__body">
@@ -190,104 +90,106 @@
   </div>
 </aside>
 
-<!-- ════════════════════════════════════════════
-     HERO SECTION
-     ════════════════════════════════════════════ -->
-<section class="collections-hero">
-  <h1>The Collection</h1>
-  <p>Minimalist essentials designed with precision and intention.</p>
+<!-- MAIN PRODUCT DETAIL -->
+<main>
+<section class="product-detail" id="product-detail-section">
+  <div class="product-detail__inner">
+
+    <!-- Image Gallery -->
+    <div class="product-detail__gallery">
+      <div class="product-detail__main-img-wrap">
+        <img class="product-detail__main-img" id="pd-main-img" src="" alt="Product" />
+        <span class="product-badge product-badge--new" id="pd-badge" style="display:none;"></span>
+      </div>
+      <div class="product-detail__thumbs" id="pd-thumbs"></div>
+    </div>
+
+    <!-- Product Info -->
+    <div class="product-detail__info">
+      <p class="product-detail__sub" id="pd-sub"></p>
+      <h1 class="product-detail__name" id="pd-name"></h1>
+      <div class="product-detail__rating" id="pd-rating"></div>
+      <p class="product-detail__price" id="pd-price"></p>
+
+      <!-- Color Selection -->
+      <div class="product-detail__option-group" id="pd-color-group">
+        <label class="product-detail__option-label" data-i18n="pd_color">Couleur</label>
+        <div class="product-detail__colors" id="pd-colors"></div>
+      </div>
+
+      <!-- Size Selection -->
+      <div class="product-detail__option-group" id="pd-size-group">
+        <label class="product-detail__option-label" data-i18n="pd_size">Taille</label>
+        <div class="product-detail__sizes" id="pd-sizes"></div>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="product-detail__actions">
+        <button class="btn-custom-order" id="pd-custom-order" data-i18n="pd_custom_order">
+          <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" width="20" height="20"><path stroke-linecap="round" stroke-linejoin="round" d="M9.53 16.122a3 3 0 00-5.78 1.128 2.25 2.25 0 01-2.4 2.245 4.5 4.5 0 008.4-2.245c0-.399-.078-.78-.22-1.128zm0 0a15.998 15.998 0 003.388-1.62m-5.043-.025a15.994 15.994 0 011.622-3.395m3.42 3.42a15.995 15.995 0 004.764-4.648l3.876-5.814a1.151 1.151 0 00-1.597-1.597L14.146 6.32a15.996 15.996 0 00-4.649 4.763m3.42 3.42a6.776 6.776 0 00-3.42-3.42"/></svg>
+          <span>Commande Personnalisée</span>
+        </button>
+        <button class="btn-add-cart-detail" id="pd-add-cart" data-i18n="col_add_to_cart">
+          <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" width="20" height="20"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 10.5V6a3.75 3.75 0 1,0-7.5 0v4.5m11.356-1.993 1.263 12c.07.665-.45 1.243-1.119 1.243H4.25a1.125 1.125 0 0,1-1.12-1.243l1.264-12A1.125 1.125 0 0,1 5.513 7.5h12.974c.576 0 1.059.435 1.119 1.007ZM8.625 10.5a.375.375 0 1,1-.75 0 .375.375 0 0,1 .75 0Zm7.5 0a.375.375 0 1,1-.75 0 .375.375 0 0,1 .75 0Z"/></svg>
+          <span>Ajouter au Panier</span>
+        </button>
+      </div>
+
+      <!-- Features -->
+      <div class="product-detail__features">
+        <div class="product-detail__feature">
+          <svg fill="none" viewBox="0 0 24 24" stroke-width="1.5" width="18" height="18"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 18.75a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h6m-9 0H3.375a1.125 1.125 0 01-1.125-1.125V14.25m17.25 4.5a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h1.125c.621 0 1.129-.504 1.09-1.124a17.902 17.902 0 00-3.213-9.193 2.056 2.056 0 00-1.58-.86H14.25M16.5 18.75h-2.25m0-11.177v-.958c0-.568-.422-1.048-.987-1.106a48.554 48.554 0 00-10.026 0 1.106 1.106 0 00-.987 1.106v7.635m12-6.677v6.677m0 4.5v-4.5m0 0h-12"/></svg>
+          <span data-i18n="pd_feat_shipping">Livraison rapide 58 wilayas</span>
+        </div>
+        <div class="product-detail__feature">
+          <svg fill="none" viewBox="0 0 24 24" stroke-width="1.5" width="18" height="18"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z"/></svg>
+          <span data-i18n="pd_feat_quality">Qualité premium garantie</span>
+        </div>
+        <div class="product-detail__feature">
+          <svg fill="none" viewBox="0 0 24 24" stroke-width="1.5" width="18" height="18"><path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182"/></svg>
+          <span data-i18n="pd_feat_returns">إرجاع خلال 14 يوم</span>
+        </div>
+      </div>
+    </div>
+  </div>
 </section>
+</main>
 
-<!-- ════════════════════════════════════════════
-     COLLECTIONS GRID LAYOUT
-     ════════════════════════════════════════════ -->
-<div class="collections-container">
-  
-  <!-- Sidebar Filters -->
-  <aside class="collections-sidebar">
-    
-    <!-- Live Search -->
-    <div class="filter-group">
-      <label class="filter-group__title" for="search-input">Search Products</label>
-      <input type="text" id="search-input" class="filter-search-input" placeholder="Type to search..." />
-    </div>
-
-    <!-- Categories -->
-    <div class="filter-group">
-      <span class="filter-group__title">Categories</span>
-      <button class="sidebar-category-btn category-btn category-btn--active" data-category="all">All Products</button>
-      <button class="sidebar-category-btn category-btn" data-category="jeans">Denim / Jeans</button>
-      <button class="sidebar-category-btn category-btn" data-category="jackets">Jackets</button>
-      <button class="sidebar-category-btn category-btn" data-category="hoodies">Hoodies</button>
-    </div>
-
-    <!-- Sorting -->
-    <div class="filter-group">
-      <label class="filter-group__title" for="sort-select">Sort By</label>
-      <select id="sort-select" class="filter-select">
-        <option value="featured">Featured</option>
-        <option value="price-asc">Price: Low to High</option>
-        <option value="price-desc">Price: High to Low</option>
-        <option value="name-asc">Alphabetically: A-Z</option>
-        <option value="name-desc">Alphabetically: Z-A</option>
-      </select>
-    </div>
-
-  </aside>
-
-  <!-- Main Grid Column -->
-  <main class="collections-main">
-    <div class="collections-info-bar">
-      <span>Showing <span id="active-products-count">0</span> products</span>
-      <span>Curated Streetwear</span>
-    </div>
-
-    <!-- Grid of Products -->
-    <div class="product-grid" id="product-grid" role="list" aria-label="Products">
-      <!-- Loaded dynamically by products.js / main.js -->
-    </div>
-  </main>
-
-</div>
-
-<!-- ════════════════════════════════════════════
-     FOOTER
-     ════════════════════════════════════════════ -->
+<!-- FOOTER -->
 <footer class="footer" id="contact" role="contentinfo">
   <div class="footer__inner">
     <div class="footer__grid">
-      <!-- Brand column -->
       <div class="footer-col">
-        <p class="footer-tagline">
-          Curated essentials for a more intentional life.<br/>Proudly Algerian.
-        </p>
+        <p class="footer-tagline">Curated essentials for a more intentional life.<br/>Proudly Algerian.</p>
       </div>
-
-      <!-- Shop links -->
       <div class="footer-col">
         <h4 data-i18n="foot_shop">Shop</h4>
         <ul>
           <li><a href="/#collection" data-i18n="foot_new_arrivals">New Arrivals</a></li>
-          <li><a href="/collections" data-i18n="foot_collection">The Collection</a></li>
-          <li><a href="/#about" data-i18n="foot_our_story">Our Story</a></li>
+          <li><a href="#" data-i18n="foot_best_sellers">Best Sellers</a></li>
+          <li><a href="#" data-i18n="foot_home_living">Home & Living</a></li>
+          <li><a href="#" data-i18n="foot_accessories">Accessories</a></li>
         </ul>
       </div>
-
-      <!-- Contact -->
+      <div class="footer-col">
+        <h4 data-i18n="foot_info">Info</h4>
+        <ul>
+          <li><a href="/#about" data-i18n="foot_our_story">Our Story</a></li>
+          <li><a href="#" data-i18n="foot_shipping">Shipping & Returns</a></li>
+          <li><a href="#" data-i18n="foot_privacy">Privacy Policy</a></li>
+          <li><a href="#" data-i18n="foot_faq">FAQ</a></li>
+        </ul>
+      </div>
       <div class="footer-col">
         <h4 data-i18n="foot_contact">Contact</h4>
         <ul>
           <li class="contact-item">
+            <svg fill="none" viewBox="0 0 24 24" stroke-width="1.5" width="16" height="16"><path stroke-linecap="round" stroke-linejoin="round" d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
             <a href="mailto:contact@aizo.dz">contact@aizo.dz</a>
-          </li>
-          <li class="contact-item">
-            <span>Algiers, Algeria</span>
           </li>
         </ul>
       </div>
     </div>
-
-    <!-- Bottom bar -->
     <div class="footer__bottom">
       <p class="footer__copy" data-i18n="foot_copy">© 2026 AIZO.DZ — All rights reserved.</p>
       <p class="footer__made" data-i18n="foot_made">Made with intention · Algeria</p>
@@ -295,9 +197,7 @@
   </div>
 </footer>
 
-<!-- ════════════════════════════════════════════
-     CART DRAWER
-     ════════════════════════════════════════════ -->
+<!-- Cart Drawer (full version with checkout form) -->
 <div class="cart-drawer-backdrop" id="cart-drawer-backdrop" aria-hidden="true"></div>
 <aside class="cart-drawer" id="cart-drawer" role="dialog" aria-modal="true" aria-labelledby="cart-drawer-title">
   <div class="cart-drawer__header">
@@ -478,7 +378,9 @@
           <span class="error-msg" id="err-office">يرجى اختيار مكتب التوصيل</span>
         </div>
 
-        <button type="submit" class="btn-primary btn-checkout" id="btn-confirm-order">تأكيد الطلب / Confirm Order</button>
+        <button type="submit" class="btn-primary btn-checkout" id="btn-confirm-order">
+          تأكيد الطلب / Confirm Order
+        </button>
         <div class="error-alert" id="checkout-error-alert" style="display: none;">
           <span class="error-icon">⚠️</span>
           <div class="error-content">
@@ -528,34 +430,11 @@
 </aside>
 
 <!-- Scripts -->
-<script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
 <script src="js/config.js"></script>
 <script src="js/products.js"></script>
 <script src="js/i18n.js"></script>
 <script src="js/sync.js"></script>
 <script src="js/main.js"></script>
-
-<script>
-  // Dynamic product counter update on load and filter changes
-  document.addEventListener('DOMContentLoaded', () => {
-    const counterEl = document.getElementById('active-products-count');
-    
-    function updateCount() {
-      setTimeout(() => {
-        const visibleCards = document.querySelectorAll('#product-grid .product-card');
-        if (counterEl) counterEl.textContent = visibleCards.length;
-      }, 350);
-    }
-    
-    // Initial update
-    updateCount();
-    
-    // Update on category click
-    document.querySelectorAll('.category-btn').forEach(btn => {
-      btn.addEventListener('click', updateCount);
-    });
-  });
-</script>
-
+<script src="js/product-detail.js"></script>
 </body>
 </html>

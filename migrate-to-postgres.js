@@ -27,7 +27,7 @@ if (fs.existsSync(envPath)) {
 
 // تأكد من تعيين DATABASE_URL
 if (!process.env.DATABASE_URL) {
-  process.env.DATABASE_URL = "postgresql://aizo:CHANGE_THIS_STRONG_PASSWORD@localhost:5432/aizo_dz";
+  process.env.DATABASE_URL = "postgresql://postgres:RlSszFuyflratzfSdXYBISZbGfDrnuGN@reseau.proxy.rlwy.net:39416/railway";
 }
 
 console.log('✅ DATABASE_URL loaded:', process.env.DATABASE_URL.substring(0, 50) + '***');

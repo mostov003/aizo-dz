@@ -20,7 +20,6 @@ process.on('unhandledRejection', (reason, promise) => {
 const config = require('./config');
 
 const app = express();
-app.set('trust proxy', 1); // we're behind Nginx (one hop) — needed for express-rate-limit and req.ip to work correctly
 const PORT = config.port;
 
 // Middleware
@@ -1592,62 +1591,6 @@ async function zrKeepAlivePing() {
 // Start keep-alive pings after server starts
 keepAliveTimer = setInterval(zrKeepAlivePing, ZR_KEEPALIVE_INTERVAL);
 console.log(`🏓 ZR Express Keep-Alive: Running every ${ZR_KEEPALIVE_INTERVAL / 60000} minutes`);
-
-// ZR Express Auto-Status-Sync: periodically check active shipments and update their status
-const ZR_AUTO_SYNC_INTERVAL = 30 * 60 * 1000; // 30 minutes
-const TERMINAL_STATUSES = ['Delivered', 'Returned', 'Cancelled', 'livré', 'retourné', 'annulé'];
-
-async function autoSyncZRStatuses() {
-  try {
-    const orders = await getAllOrders();
-    const active = orders.filter(o => o.zrParcelId && !TERMINAL_STATUSES.includes(o.status));
-    if (active.length === 0) return;
-
-    console.log(`🔄 Auto-sync: checking ${active.length} active ZR shipment(s)...`);
-
-    for (const order of active) {
-      try {
-        const syncRes = await fetch(`${ZR_BASE_URL}/parcels/${order.zrParcelId}`, {
-          method: 'GET',
-          headers: { 'X-Tenant': ZR_TENANT_ID, 'X-Api-Key': ZR_SECRET_KEY },
-          signal: AbortSignal.timeout(10000)
-        });
-        if (!syncRes.ok) continue;
-
-        const zrData = await syncRes.json();
-        const zrState = zrData.status?.state || zrData.status || 'OrderReceived';
-        const zrSituation = zrData.status?.situation || '';
-        const zrStatus = { state: zrState, situation: zrSituation };
-
-        let mappedStatus;
-        if (zrState === 'Delivered') mappedStatus = 'Delivered';
-        else if (['Returned', 'ReturnReceived', 'ReturnCreated'].includes(zrState)) mappedStatus = 'Returned';
-        else if (zrState === 'Cancelled') mappedStatus = 'Cancelled';
-        else mappedStatus = 'Confirmed';
-
-        await updateOrderShipping(order.id, {
-          trackingNumber: order.trackingNumber,
-          zrParcelId: order.zrParcelId,
-          zrStatus
-        });
-
-        if (mappedStatus !== order.status) {
-          await updateOrderStatus(order.id, mappedStatus);
-          console.log(`  ↻ Order #${order.id}: ${order.status} → ${mappedStatus}`);
-        }
-      } catch (err) {
-        console.warn(`  ⚠️ Auto-sync failed for order #${order.id}: ${err.message}`);
-      }
-      await new Promise(r => setTimeout(r, 300)); // be gentle with ZR's API
-    }
-  } catch (err) {
-    console.error('❌ Auto-sync ZR statuses failed:', err.message);
-  }
-}
-
-setInterval(autoSyncZRStatuses, ZR_AUTO_SYNC_INTERVAL);
-console.log(`🔄 ZR Auto-Status-Sync: Running every ${ZR_AUTO_SYNC_INTERVAL / 60000} minutes`);
-setTimeout(autoSyncZRStatuses, 60 * 1000); // also run shortly after startup
 
 // ╔════════════════════════════════════════════════════════════╗
 // ║              Graceful Shutdown Handler                      ║
