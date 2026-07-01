@@ -320,6 +320,7 @@ async function updateOrderShipping(orderId, shippingData) {
       WHERE id = $1
       RETURNING *
     `;
+    
     await query(sql, [
       orderId,
       shippingData.trackingNumber,
@@ -329,27 +330,6 @@ async function updateOrderShipping(orderId, shippingData) {
     return await getOrderById(orderId);
   } catch (err) {
     console.error('❌ خطأ في تحديث الشحن:', err.message);
-    throw err;
-  }
-}
-
-// Separate function for syncing ZR status only — does NOT touch status or shippedAt
-// (those are set correctly by updateOrderStatus and updateOrderShipping at ship time)
-async function updateOrderZRStatus(orderId, zrStatus) {
-  try {
-    const sql = `
-      UPDATE "Order"
-      SET
-        "zrStatus" = $2,
-        "lastSyncedAt" = NOW(),
-        "updatedAt" = NOW()
-      WHERE id = $1
-      RETURNING *
-    `;
-    await query(sql, [orderId, zrStatus]);
-    return await getOrderById(orderId);
-  } catch (err) {
-    console.error('❌ خطأ في تحديث حالة ZR:', err.message);
     throw err;
   }
 }
@@ -497,7 +477,6 @@ module.exports = {
   createOrder,
   updateOrderStatus,
   updateOrderShipping,
-  updateOrderZRStatus,
   deleteOrder,
   // Lead functions
   getAllLeads,

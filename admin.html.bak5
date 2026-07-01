@@ -931,6 +931,16 @@
             order.shippedAt = new Date().toISOString();
             order.status = 'livré';
 
+            // Update local storage
+            var localOrders = JSON.parse(localStorage.getItem('local_orders') || '[]');
+            var idx = localOrders.findIndex(function(o) { return String(o.id) === String(orderId); });
+            if (idx > -1) {
+              localOrders[idx] = order;
+            } else {
+              localOrders.push(order);
+            }
+            localStorage.setItem('local_orders', JSON.stringify(localOrders));
+
             // Refresh UI - refresh both tables
             var ordersFilter = document.querySelector('#panel-orders .filter-btn.active') ? document.querySelector('#panel-orders .filter-btn.active').getAttribute('data-filter') : 'all';
             var customFilter = document.querySelector('#panel-custom-orders .filter-btn.active') ? document.querySelector('#panel-custom-orders .filter-btn.active').getAttribute('data-filter') : 'all';
@@ -2500,16 +2510,19 @@
           if (order.trackingNumber) {
             var zrStateLabel = '';
             if (order.zrStatus && order.zrStatus.state) {
-              var zrKey = 'zr_' + order.zrStatus.state;
-              var zrTranslated = (window.t && window.t(zrKey) !== zrKey) ? window.t(zrKey) : order.zrStatus.state;
-              zrStateLabel = '<span class="zr-status-chip">' + zrTranslated + '</span>';
+              var stateMap = {
+                'OrderReceived': 'تم استلام الطلب', 'CourierAssigned': 'تم تعيين ساعي', 'PickupInitiated': 'بدء الاستلام',
+                'InTransit': 'في الطريق', 'CustomerCalled': 'تم الاتصال بالعميل', 'Delivered': 'تم التسليم',
+                'Returned': 'مُرجع', 'ReturnCreated': 'طلب إرجاع', 'ReturnReceived': 'استلام الإرجاع',
+                'Settled': 'مسوّى', 'Cancelled': 'ملغى'
+              };
+              var situationLabel = (order.zrStatus.situation) ? ' - ' + order.zrStatus.situation : '';
+              zrStateLabel = '<span class="zr-status-chip">' + (stateMap[order.zrStatus.state] || order.zrStatus.state) + situationLabel + '</span>';
             }
-            var syncBtnLabel = (window.t && window.t('zr_sync_btn') !== 'zr_sync_btn') ? window.t('zr_sync_btn') : 'Sync ZR';
             trackingHtml = '<div class="tracking-row">'
               + '<span class="tracking-badge">🚀 ' + order.trackingNumber + '</span>'
               + zrStateLabel
-              + '<button class="btn-action btn-sync" onclick="window.syncOrderStatus(\'' + order.id + '\')">🔄 ' + syncBtnLabel + '</button>'
-              + '</div>';
+              + '<button class="btn-action btn-sync" onclick="window.syncOrderStatus(\'' + order.id + '\')">🔄 تحديث</button>'
               + '</div>';
           }
 
@@ -2534,7 +2547,7 @@
           // Step 3: confirmé / Confirmed / ReadyToShip / InDelivery - Shipped or Not Shipped
           else if (order.status === 'confirmé' || order.status === 'Confirmed' || order.status === 'ReadyToShip' || order.status === 'InDelivery') {
             dropdownHtml += '    <div class="dropdown-submenu-header">خطوة 3: الشحن / Step 3: Shipping</div>'
-              + (order.zrParcelId ? '' : '    <button class="dropdown-item btn-zr-ship" onclick="window.shipOrderViaZR(\'' + order.id + '\'')" title="إرسال لشحن عبر ZR Express" style="color: #2563eb; font-weight: 500;"><span style="font-size: 1rem;">🚚</span> شحن ZR / Ship ZR</button>')
+              + '    <button class="dropdown-item btn-zr-ship" onclick="window.shipOrderViaZR(\'' + order.id + '\')" title="إرسال لشحن عبر ZR Express" style="color: #2563eb; font-weight: 500;"><span style="font-size: 1rem;">🚚</span> شحن ZR / Ship ZR</button>'
               + '    <button class="dropdown-item" onclick="window.changeOrderStatus(\'' + order.id + '\', \'livré\')">✅ تم الشحن / Shipped</button>'
               + '    <button class="dropdown-item" onclick="window.changeOrderStatus(\'' + order.id + '\', \'retourné\')">📦 لم يتم الشحن / Not Shipped</button>';
           }
@@ -2745,7 +2758,7 @@
           // Step 3: confirmé / Confirmed / ReadyToShip / InDelivery - Shipped or Not Shipped
           else if (order.status === 'confirmé' || order.status === 'Confirmed' || order.status === 'ReadyToShip' || order.status === 'InDelivery') {
             dropdownHtml += '    <div class="dropdown-submenu-header">خطوة 3: الشحن / Step 3: Shipping</div>'
-              + (order.zrParcelId ? '' : '    <button class="dropdown-item btn-zr-ship" onclick="window.shipOrderViaZR(\'' + order.id + '\'')" title="إرسال لشحن عبر ZR Express" style="color: #2563eb; font-weight: 500;"><span style="font-size: 1rem;">🚚</span> شحن ZR / Ship ZR</button>')
+              + '    <button class="dropdown-item btn-zr-ship" onclick="window.shipOrderViaZR(\'' + order.id + '\')" title="إرسال لشحن عبر ZR Express" style="color: #2563eb; font-weight: 500;"><span style="font-size: 1rem;">🚚</span> شحن ZR / Ship ZR</button>'
               + '    <button class="dropdown-item" onclick="window.changeOrderStatus(\'' + order.id + '\', \'livré\')">✅ تم الشحن / Shipped</button>'
               + '    <button class="dropdown-item" onclick="window.changeOrderStatus(\'' + order.id + '\', \'retourné\')">📦 لم يتم الشحن / Not Shipped</button>';
           }
@@ -3568,10 +3581,14 @@
           try {
             var result = await apiFetch('/api/orders/' + orderId + '/sync-zr', { method: 'POST' });
             if (result.order && result.order.zrStatus) {
+              var stateMap = {
+                'OrderReceived': 'تم استلام الطلب', 'CourierAssigned': 'تم تعيين ساعي', 'PickupInitiated': 'بدء الاستلام',
+                'InTransit': 'في الطريق', 'CustomerCalled': 'تم الاتصال بالعميل', 'Delivered': 'تم التسليم',
+                'Returned': 'مُرجع', 'ReturnCreated': 'طلب إرجاع', 'ReturnReceived': 'استلام الإرجاع',
+                'Settled': 'مسوّى', 'Cancelled': 'ملغى'
+              };
               var stateName = result.order.zrStatus.state || '-';
-              var zrStateKey = 'zr_' + stateName;
-              var stateLabel = (window.t && window.t(zrStateKey) !== zrStateKey) ? window.t(zrStateKey) : stateName;
-              alert('📡 ' + (window.t && window.t('zr_sync_status') || 'Shipment Status') + ': ' + stateLabel);
+              alert('📡 حالة الشحنة: ' + (stateMap[stateName] || stateName));
             }
             await loadDashboardStats(true);
             var activeFilter = document.querySelector('.filter-btn.active').getAttribute('data-filter');
@@ -3594,7 +3611,7 @@
               await renderOrdersTable(activeFilter, true);
             } catch(directSyncErr) {
               alert('⚠️ تعذّر مزامنة حالة الطلب: ' + (directSyncErr.message || e.message || ''));
-              if (btn) { btn.disabled = false; btn.textContent = '🔄 ' + (window.t && window.t('zr_sync_btn') || 'Sync'); }
+              if (btn) { btn.disabled = false; btn.textContent = '🔄 تحديث'; }
               console.error('Direct sync failure:', directSyncErr);
             }
           }

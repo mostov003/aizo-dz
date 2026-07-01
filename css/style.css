@@ -7128,3 +7128,96 @@ p, span, div, button, a, label {
     height: 26px !important;
   }
 }
+
+/* Redesign the garment-type modal to be compact enough to fit without scrolling,
+   on screens wider than 640px (mobile keeps its existing single-column layout) */
+@media (min-width: 641px) {
+  .garment-modal {
+    padding: 1.5rem;
+  }
+  .garment-modal-header h2 { font-size: 1.15rem; margin-bottom: 0.25rem; }
+  .garment-modal-header p { font-size: 0.85rem; line-height: 1.4; }
+  .garment-modal-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 0.6rem;
+    margin: 1.1rem 0;
+  }
+  .garment-modal-grid .garment-card {
+    grid-template-columns: 1fr;
+    justify-items: center;
+    text-align: center;
+    padding: 0.75rem 0.5rem;
+    min-height: 82px;
+    gap: 0.35rem;
+  }
+  .garment-modal-grid .garment-card span {
+    width: 34px;
+    height: 34px;
+    font-size: 1.05rem;
+  }
+  .garment-modal-grid .garment-card strong { font-size: 0.8rem; margin-bottom: 0; }
+  .garment-modal-grid .garment-card small { font-size: 0.65rem; line-height: 1.25; }
+  .garment-modal-foot { margin-top: 0.25rem; }
+  .garment-modal-foot .btn-primary { padding: 0.75rem 1.3rem; }
+}
+
+/* Same compact redesign for mobile — 2 columns instead of 1, so all 7 options
+   fit without anything being pushed off-screen */
+@media (max-width: 640px) {
+  .garment-modal {
+    padding: 1.1rem;
+  }
+  .garment-modal-header h2 { font-size: 1.05rem; margin-bottom: 0.2rem; }
+  .garment-modal-header p { font-size: 0.78rem; line-height: 1.35; }
+  .garment-modal-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 0.5rem !important;
+    margin: 0.9rem 0 !important;
+  }
+  .garment-modal-grid .garment-card {
+    grid-template-columns: 1fr;
+    justify-items: center;
+    text-align: center;
+    padding: 0.6rem 0.4rem;
+    min-height: 72px;
+    gap: 0.25rem;
+  }
+  .garment-modal-grid .garment-card span {
+    width: 30px;
+    height: 30px;
+    font-size: 0.95rem;
+  }
+  .garment-modal-grid .garment-card strong { font-size: 0.72rem; margin-bottom: 0; }
+  .garment-modal-grid .garment-card small { font-size: 0.6rem; line-height: 1.2; }
+  .garment-modal-foot { margin-top: 0.2rem; }
+  .garment-modal-foot .btn-primary { padding: 0.65rem 1.1rem; font-size: 0.85rem; }
+}
+
+/* Center the workspace grid's track itself, without touching display on
+   co-preview-column / co-mockup-wrapper / co-canvas-outer (JS measures those
+   directly to size the canvas, so they must be left alone) */
+.co-grid {
+  justify-content: center;
+}
+
+/* Always use a single full-width column for the design step, so the mockup
+   centers across the whole page instead of just within a narrower side column.
+   (Doesn't touch co-preview-column / co-mockup-wrapper / co-canvas-outer
+   themselves, so the canvas-sizing script isn't affected.) */
+.co-grid {
+  grid-template-columns: 1fr !important;
+}
+.co-workspace-container {
+  margin-top: 95px !important;
+}
+
+/* Remove the "Fast Shipping / Cash on Delivery" announcement bar site-wide */
+.announcement-bar {
+  display: none !important;
+}
+
+/* Reduce the customize page's top margin now that the announcement bar is
+   gone — the page's own script already accounts for the navbar height alone */
+.co-workspace-container {
+  margin-top: 20px !important;
+}

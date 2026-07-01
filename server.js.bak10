@@ -5,7 +5,7 @@ const path = require('path');
 const dotenv = require('dotenv');
 const os = require('os');
 const { createZRProduct } = require('./utils/zrProduct');
-const { query, getAllOrders, getOrderById, getOrderByNumber, createOrder, updateOrderStatus, updateOrderShipping, updateOrderZRStatus, deleteOrder, getAllLeads, createLead, deleteLead, getAllProducts, createProduct, closePrisma } = require('./utils/db');
+const { query, getAllOrders, getOrderById, getOrderByNumber, createOrder, updateOrderStatus, updateOrderShipping, deleteOrder, getAllLeads, createLead, deleteLead, getAllProducts, createProduct, closePrisma } = require('./utils/db');
 
 // تحميل المتغيرات
 dotenv.config();
@@ -1463,40 +1463,35 @@ app.post('/api/orders/:id/sync-zr', async (req, res) => {
     }
 
     const zrData = await syncResponse.json();
-
-    // ZR Express uses zrData.state.name (snake_case) — not zrData.status.state
-    const zrState = zrData.state?.name || zrData.status?.state || zrData.status || 'OrderReceived';
-    const zrSituation = zrData.state?.description || zrData.status?.situation || '';
-
+    
+    // Extract state and situation from zrData
+    const zrState = zrData.status?.state || zrData.status || 'OrderReceived';
+    const zrSituation = zrData.status?.situation || '';
+    
     order.zrStatus = {
       state: zrState,
       situation: zrSituation
     };
-
-    // Map ZR snake_case state names to internal order status
-    const DELIVERED_STATES   = ['delivered', 'livre', 'livré'];
-    const RETURNED_STATES    = ['returned', 'return_received', 'return_created', 'retour', 'en_retour'];
-    const CANCELLED_STATES   = ['cancelled', 'annule', 'annulé'];
-
-    const zrStateLower = zrState.toLowerCase();
-    if (DELIVERED_STATES.some(s => zrStateLower.includes(s))) {
+    
+    // Map ZR status to local order status
+    if (zrState === 'Delivered') {
       order.status = 'Delivered';
-    } else if (RETURNED_STATES.some(s => zrStateLower.includes(s))) {
+    } else if (zrState === 'Returned' || zrState === 'ReturnReceived' || zrState === 'ReturnCreated') {
       order.status = 'Returned';
-    } else if (CANCELLED_STATES.some(s => zrStateLower.includes(s))) {
+    } else if (zrState === 'Cancelled') {
       order.status = 'Cancelled';
     } else {
-      order.status = 'Confirmed';
+      order.status = 'Confirmed'; // Keep it Confirmed while in transit
     }
 
-    // Use updateOrderZRStatus (not updateOrderShipping) so we only update the ZR
-    // status field — updateOrderShipping hardcodes status='livré' and resets
-    // shippedAt, which would overwrite whatever the real current status should be
-    await updateOrderZRStatus(id, order.zrStatus);
+    const updatedOrder = await updateOrderShipping(id, {
+      trackingNumber: order.trackingNumber,
+      zrParcelId: order.zrParcelId,
+      zrStatus: order.zrStatus
+    });
     await updateOrderStatus(id, order.status);
-    const updatedOrder = await getOrderById(id);
 
-    res.json({ success: true, order: updatedOrder, zrData });
+    res.json({ success: true, order: { ...updatedOrder, status: order.status }, zrData });
   } catch (err) {
     console.error(`Error syncing ZR:`, err.message);
     res.status(500).json({ success: false, error: err.message });
@@ -1620,15 +1615,14 @@ async function autoSyncZRStatuses() {
         if (!syncRes.ok) continue;
 
         const zrData = await syncRes.json();
-        const zrState = zrData.state?.name || zrData.status?.state || zrData.status || 'OrderReceived';
-        const zrSituation = zrData.state?.description || zrData.status?.situation || '';
+        const zrState = zrData.status?.state || zrData.status || 'OrderReceived';
+        const zrSituation = zrData.status?.situation || '';
         const zrStatus = { state: zrState, situation: zrSituation };
 
-        const zrStateLower = zrState.toLowerCase();
         let mappedStatus;
-        if (['delivered','livre','livré'].some(s => zrStateLower.includes(s))) mappedStatus = 'Delivered';
-        else if (['returned','return_received','return_created','retour','en_retour'].some(s => zrStateLower.includes(s))) mappedStatus = 'Returned';
-        else if (['cancelled','annule','annulé'].some(s => zrStateLower.includes(s))) mappedStatus = 'Cancelled';
+        if (zrState === 'Delivered') mappedStatus = 'Delivered';
+        else if (['Returned', 'ReturnReceived', 'ReturnCreated'].includes(zrState)) mappedStatus = 'Returned';
+        else if (zrState === 'Cancelled') mappedStatus = 'Cancelled';
         else mappedStatus = 'Confirmed';
 
         await updateOrderShipping(order.id, {

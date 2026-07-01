@@ -802,7 +802,17 @@
           }
         }
 
-        var orders = await apiFetch('/api/orders'); // let failures propagate — never silently substitute stale cached data
+        var orders = [];
+        try {
+          orders = await apiFetch('/api/orders');
+        } catch(e) {
+          console.warn('Could not load orders from backend server, falling back to localStorage:', e);
+          try {
+            orders = JSON.parse(localStorage.getItem('local_orders') || '[]');
+          } catch (localErr) {
+            orders = [];
+          }
+        }
 
         cachedOrders = orders;
         return orders;
@@ -930,6 +940,16 @@
             order.zrStatus = response.status || { state: 'OrderReceived', situation: '' };
             order.shippedAt = new Date().toISOString();
             order.status = 'livré';
+
+            // Update local storage
+            var localOrders = JSON.parse(localStorage.getItem('local_orders') || '[]');
+            var idx = localOrders.findIndex(function(o) { return String(o.id) === String(orderId); });
+            if (idx > -1) {
+              localOrders[idx] = order;
+            } else {
+              localOrders.push(order);
+            }
+            localStorage.setItem('local_orders', JSON.stringify(localOrders));
 
             // Refresh UI - refresh both tables
             var ordersFilter = document.querySelector('#panel-orders .filter-btn.active') ? document.querySelector('#panel-orders .filter-btn.active').getAttribute('data-filter') : 'all';
@@ -2500,16 +2520,19 @@
           if (order.trackingNumber) {
             var zrStateLabel = '';
             if (order.zrStatus && order.zrStatus.state) {
-              var zrKey = 'zr_' + order.zrStatus.state;
-              var zrTranslated = (window.t && window.t(zrKey) !== zrKey) ? window.t(zrKey) : order.zrStatus.state;
-              zrStateLabel = '<span class="zr-status-chip">' + zrTranslated + '</span>';
+              var stateMap = {
+                'OrderReceived': 'تم استلام الطلب', 'CourierAssigned': 'تم تعيين ساعي', 'PickupInitiated': 'بدء الاستلام',
+                'InTransit': 'في الطريق', 'CustomerCalled': 'تم الاتصال بالعميل', 'Delivered': 'تم التسليم',
+                'Returned': 'مُرجع', 'ReturnCreated': 'طلب إرجاع', 'ReturnReceived': 'استلام الإرجاع',
+                'Settled': 'مسوّى', 'Cancelled': 'ملغى'
+              };
+              var situationLabel = (order.zrStatus.situation) ? ' - ' + order.zrStatus.situation : '';
+              zrStateLabel = '<span class="zr-status-chip">' + (stateMap[order.zrStatus.state] || order.zrStatus.state) + situationLabel + '</span>';
             }
-            var syncBtnLabel = (window.t && window.t('zr_sync_btn') !== 'zr_sync_btn') ? window.t('zr_sync_btn') : 'Sync ZR';
             trackingHtml = '<div class="tracking-row">'
               + '<span class="tracking-badge">🚀 ' + order.trackingNumber + '</span>'
               + zrStateLabel
-              + '<button class="btn-action btn-sync" onclick="window.syncOrderStatus(\'' + order.id + '\')">🔄 ' + syncBtnLabel + '</button>'
-              + '</div>';
+              + '<button class="btn-action btn-sync" onclick="window.syncOrderStatus(\'' + order.id + '\')">🔄 تحديث</button>'
               + '</div>';
           }
 
@@ -2534,7 +2557,7 @@
           // Step 3: confirmé / Confirmed / ReadyToShip / InDelivery - Shipped or Not Shipped
           else if (order.status === 'confirmé' || order.status === 'Confirmed' || order.status === 'ReadyToShip' || order.status === 'InDelivery') {
             dropdownHtml += '    <div class="dropdown-submenu-header">خطوة 3: الشحن / Step 3: Shipping</div>'
-              + (order.zrParcelId ? '' : '    <button class="dropdown-item btn-zr-ship" onclick="window.shipOrderViaZR(\'' + order.id + '\'')" title="إرسال لشحن عبر ZR Express" style="color: #2563eb; font-weight: 500;"><span style="font-size: 1rem;">🚚</span> شحن ZR / Ship ZR</button>')
+              + '    <button class="dropdown-item btn-zr-ship" onclick="window.shipOrderViaZR(\'' + order.id + '\')" title="إرسال لشحن عبر ZR Express" style="color: #2563eb; font-weight: 500;"><span style="font-size: 1rem;">🚚</span> شحن ZR / Ship ZR</button>'
               + '    <button class="dropdown-item" onclick="window.changeOrderStatus(\'' + order.id + '\', \'livré\')">✅ تم الشحن / Shipped</button>'
               + '    <button class="dropdown-item" onclick="window.changeOrderStatus(\'' + order.id + '\', \'retourné\')">📦 لم يتم الشحن / Not Shipped</button>';
           }
@@ -2745,7 +2768,7 @@
           // Step 3: confirmé / Confirmed / ReadyToShip / InDelivery - Shipped or Not Shipped
           else if (order.status === 'confirmé' || order.status === 'Confirmed' || order.status === 'ReadyToShip' || order.status === 'InDelivery') {
             dropdownHtml += '    <div class="dropdown-submenu-header">خطوة 3: الشحن / Step 3: Shipping</div>'
-              + (order.zrParcelId ? '' : '    <button class="dropdown-item btn-zr-ship" onclick="window.shipOrderViaZR(\'' + order.id + '\'')" title="إرسال لشحن عبر ZR Express" style="color: #2563eb; font-weight: 500;"><span style="font-size: 1rem;">🚚</span> شحن ZR / Ship ZR</button>')
+              + '    <button class="dropdown-item btn-zr-ship" onclick="window.shipOrderViaZR(\'' + order.id + '\')" title="إرسال لشحن عبر ZR Express" style="color: #2563eb; font-weight: 500;"><span style="font-size: 1rem;">🚚</span> شحن ZR / Ship ZR</button>'
               + '    <button class="dropdown-item" onclick="window.changeOrderStatus(\'' + order.id + '\', \'livré\')">✅ تم الشحن / Shipped</button>'
               + '    <button class="dropdown-item" onclick="window.changeOrderStatus(\'' + order.id + '\', \'retourné\')">📦 لم يتم الشحن / Not Shipped</button>';
           }
@@ -3482,12 +3505,57 @@
         }
 
         async function syncOrderStatusDirectly(orderId) {
-          // Removed: this used to call the ZR Express API directly from the browser
-          // with hardcoded credentials (a security risk), and writing results into
-          // localStorage caused the admin dashboard to show stale/duplicate-looking
-          // data whenever the server was briefly unreachable (e.g. during a reboot).
-          // Syncing must go through the server's own /sync-zr endpoint only.
-          throw new Error('فشل الاتصال بالسيرفر. الرجاء الانتظار حتى يعود السيرفر للعمل ثم إعادة المحاولة.');
+          var secretKey = 'HMinLLedxuixTAXl3J9ljNHrG18IzaUladkGUK8KinPHukQUAAtDNJfG8YGR73tr';
+          var tenantId = 'a148a6de-efee-4415-b247-3ec2239e48e0';
+          var baseUrl = 'https://api.zrexpress.app/api/v1';
+
+          var order = (cachedOrders || []).find(function(o) { return String(o.id) === String(orderId); });
+          if (!order || !order.zrParcelId) {
+            throw new Error('الطلب ليس لديه رقم شحن ZR.');
+          }
+
+          var detailUrl = 'https://corsproxy.io/?' + encodeURIComponent(baseUrl + '/parcels/' + order.zrParcelId);
+          var res = await fetch(detailUrl, {
+            method: 'GET',
+            headers: {
+              'X-Tenant': tenantId,
+              'X-Api-Key': secretKey
+            }
+          });
+
+          if (!res.ok) {
+            throw new Error('ZR API Error ' + res.status);
+          }
+
+          var zrData = await res.json();
+          var zrState = (zrData.status && zrData.status.state) || zrData.status || 'OrderReceived';
+          var zrSituation = (zrData.status && zrData.status.situation) || '';
+
+          order.zrStatus = {
+            state: zrState,
+            situation: zrSituation
+          };
+
+          if (zrState === 'Delivered') {
+            order.status = 'Delivered';
+          } else if (zrState === 'Returned' || zrState === 'ReturnReceived' || zrState === 'ReturnCreated') {
+            order.status = 'Returned';
+          } else if (zrState === 'Cancelled') {
+            order.status = 'Cancelled';
+          } else {
+            order.status = 'Confirmed';
+          }
+
+          var localOrders = JSON.parse(localStorage.getItem('local_orders') || '[]');
+          var orderIdx = localOrders.findIndex(function(o) { return String(o.id) === String(orderId); });
+          if (orderIdx > -1) {
+            localOrders[orderIdx] = order;
+          } else {
+            localOrders.push(order);
+          }
+          localStorage.setItem('local_orders', JSON.stringify(localOrders));
+
+          return order;
         }
 
         /* ─── Deliver: send order to ZR Express ─── */
@@ -3568,10 +3636,14 @@
           try {
             var result = await apiFetch('/api/orders/' + orderId + '/sync-zr', { method: 'POST' });
             if (result.order && result.order.zrStatus) {
+              var stateMap = {
+                'OrderReceived': 'تم استلام الطلب', 'CourierAssigned': 'تم تعيين ساعي', 'PickupInitiated': 'بدء الاستلام',
+                'InTransit': 'في الطريق', 'CustomerCalled': 'تم الاتصال بالعميل', 'Delivered': 'تم التسليم',
+                'Returned': 'مُرجع', 'ReturnCreated': 'طلب إرجاع', 'ReturnReceived': 'استلام الإرجاع',
+                'Settled': 'مسوّى', 'Cancelled': 'ملغى'
+              };
               var stateName = result.order.zrStatus.state || '-';
-              var zrStateKey = 'zr_' + stateName;
-              var stateLabel = (window.t && window.t(zrStateKey) !== zrStateKey) ? window.t(zrStateKey) : stateName;
-              alert('📡 ' + (window.t && window.t('zr_sync_status') || 'Shipment Status') + ': ' + stateLabel);
+              alert('📡 حالة الشحنة: ' + (stateMap[stateName] || stateName));
             }
             await loadDashboardStats(true);
             var activeFilter = document.querySelector('.filter-btn.active').getAttribute('data-filter');
@@ -3594,7 +3666,7 @@
               await renderOrdersTable(activeFilter, true);
             } catch(directSyncErr) {
               alert('⚠️ تعذّر مزامنة حالة الطلب: ' + (directSyncErr.message || e.message || ''));
-              if (btn) { btn.disabled = false; btn.textContent = '🔄 ' + (window.t && window.t('zr_sync_btn') || 'Sync'); }
+              if (btn) { btn.disabled = false; btn.textContent = '🔄 تحديث'; }
               console.error('Direct sync failure:', directSyncErr);
             }
           }
